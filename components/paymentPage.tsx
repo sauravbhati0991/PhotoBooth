@@ -48,10 +48,7 @@ const PaymentPage = ({ grid }: PaymentPageProps) => {
         amount: data.amount,
         currency: "INR",
         name: "PhotoBooth",
-        description: {
-          title: grid.title,
-          no_of_prints: count,
-        },
+        description: `${grid.title} - ${count} prints`,
         order_id: data.id,
         handler: async function (response: any) {
           console.log("Payment Success:", response);
