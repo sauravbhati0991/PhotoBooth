@@ -44,7 +44,7 @@ const PaymentPage = ({ grid }: PaymentPageProps) => {
       });
       const data = await res.json();
       const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        key: process.env.RAZORPAY_KEY_ID,
         amount: data.amount,
         currency: "INR",
         name: "PhotoBooth",
