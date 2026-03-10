@@ -4,17 +4,19 @@ import fs from "fs";
 
 export async function GET(
   req: Request,
-  { params }: { params: { file: string } },
+  context: { params: Promise<{ file: string }> },
 ) {
   try {
-    const filePath = path.join(process.cwd(), "public", params.file);
+    const { file } = await context.params;
+
+    const filePath = path.join(process.cwd(), "public", file);
 
     const fileBuffer = fs.readFileSync(filePath);
 
     return new NextResponse(fileBuffer, {
       headers: {
         "Content-Type": "image/jpeg",
-        "Content-Disposition": `attachment; filename="${params.file}"`,
+        "Content-Disposition": `attachment; filename="${file}"`,
       },
     });
   } catch (error) {
