@@ -15,7 +15,7 @@ export default function SuccessContent() {
   useEffect(() => {
     if (!img) return;
 
-    const previewUrl = `${window.location.origin}/photo?img=${encodeURIComponent(img)}`;
+    const previewUrl = `${window.location.origin}/download?img=${encodeURIComponent(img)}`;
 
     QRCode.toDataURL(previewUrl).then(setQr);
   }, [img]);
