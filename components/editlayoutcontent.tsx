@@ -6,7 +6,6 @@ import Image from "next/image";
 import Webcam from "react-webcam";
 import html2canvas from "html2canvas-pro";
 import { ArrowLeft } from "lucide-react";
-import { Suspense } from "react";
 
 export default function EditLayoutContent() {
   const searchParams = useSearchParams();
@@ -18,6 +17,7 @@ export default function EditLayoutContent() {
 
   const [images, setImages] = useState<string[]>([]);
   const [cameraIndex, setCameraIndex] = useState<number | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const webcamRef = useRef<Webcam>(null);
   const gridRef = useRef<HTMLDivElement>(null);
@@ -68,27 +68,38 @@ export default function EditLayoutContent() {
   const allFilled = images.filter(Boolean).length === count;
 
   const generateLayoutImage = async () => {
-    if (!gridRef.current) return;
+    if (!gridRef.current || saving) return;
 
-    const canvas = await html2canvas(gridRef.current, {
-      backgroundColor: "#ffffff",
-      scale: 2,
-      useCORS: true,
-    });
+    setSaving(true);
 
-    const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
+    try {
+      const canvas = await html2canvas(gridRef.current, {
+        backgroundColor: "#ffffff",
+        scale: 2,
+        useCORS: true,
+      });
 
-    const res = await fetch("/api/upload", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ image: dataUrl }),
-    });
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
 
-    const data = await res.json();
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ image: dataUrl }),
+      });
 
-    router.push(`/success?img=${encodeURIComponent(data.url)}`);
+      const data = await res.json();
+
+      router.push(
+        `/payment?title=${encodeURIComponent(
+          title,
+        )}&price=${price}&img=${encodeURIComponent(data.url)}`,
+      );
+    } catch (error) {
+      console.error("Error saving layout:", error);
+      setSaving(false);
+    }
   };
 
   return (
@@ -96,7 +107,7 @@ export default function EditLayoutContent() {
       <div className="w-full bg-blue-50 px-6 pt-6">
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-xl"
+          className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-xl hover:bg-blue-600 transition cursor-pointer"
         >
           <ArrowLeft size={18} />
           Back
@@ -104,11 +115,21 @@ export default function EditLayoutContent() {
       </div>
 
       <div className="min-h-screen p-10 bg-blue-50">
-        <h1 className="text-3xl font-bold text-blue-600 mb-10">{title}</h1>
+        <h1 className="text-3xl underline font-bold text-blue-600 mb-10">
+          {title}
+        </h1>
 
         <div
           ref={gridRef}
-          className="grid gap-6 max-w-6xl mx-auto p-6 rounded-xl"
+          className={`grid gap-6 mx-auto p-6 rounded-xl ${
+            count <= 1
+              ? "max-w-sm"
+              : count <= 4
+                ? "max-w-xl"
+                : count <= 6
+                  ? "max-w-4xl"
+                  : "max-w-6xl"
+          }`}
           style={{
             backgroundColor: "#60a5fa",
             gridTemplateColumns: `repeat(${getGridCols(count)}, 1fr)`,
@@ -133,8 +154,8 @@ export default function EditLayoutContent() {
                 </div>
               )}
 
-              <div className="absolute inset-0 bg-gray-400 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center gap-3 transition">
-                <label className="bg-white text-blue-600 px-4 py-2 rounded-lg cursor-pointer">
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center gap-3 transition-opacity duration-300">
+                <label className="bg-white text-blue-600 px-4 py-2 rounded-lg cursor-pointer font-medium">
                   {images[index] ? "Replace" : "Upload"}
                   <input
                     type="file"
@@ -146,7 +167,7 @@ export default function EditLayoutContent() {
 
                 <button
                   onClick={() => setCameraIndex(index)}
-                  className="px-4 py-2 rounded-lg text-white bg-blue-500"
+                  className="px-4 py-2 rounded-lg text-white bg-blue-500 hover:bg-blue-600 transition cursor-pointer"
                 >
                   Capture
                 </button>
@@ -159,9 +180,10 @@ export default function EditLayoutContent() {
           <div className="mt-12 flex justify-center">
             <button
               onClick={generateLayoutImage}
-              className="bg-blue-500 text-white px-8 py-3 rounded-xl text-lg cursor-pointer"
+              disabled={saving}
+              className="bg-blue-400 hover:bg-blue-500 shadow-lg hover:shadow-xl active:bg-blue-600 disabled:bg-gray-400 text-white px-8 py-3 rounded-xl text-lg transition cursor-pointer"
             >
-              Save Layout
+              {saving ? "Saving..." : "Save Layout"}
             </button>
           </div>
         )}
@@ -178,14 +200,14 @@ export default function EditLayoutContent() {
 
             <button
               onClick={handleCapture}
-              className="bg-blue-500 text-white px-4 py-2 rounded-lg"
+              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition"
             >
               Capture Photo
             </button>
 
             <button
               onClick={() => setCameraIndex(null)}
-              className="bg-gray-300 px-4 py-2 rounded-lg"
+              className="bg-gray-300 px-4 py-2 rounded-lg hover:bg-gray-400 transition"
             >
               Cancel
             </button>

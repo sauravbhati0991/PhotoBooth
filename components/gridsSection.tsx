@@ -19,6 +19,9 @@ interface GridItem {
 export default function GridCardsSection() {
   const [layouts, setLayouts] = useState<GridItem[]>([
     { id: 1, title: "Single Layout", price: 20, count: 1 },
+    { id: 2, title: "4-Grid Layout", price: 40, count: 4 },
+    { id: 3, title: "6-Grid Layout", price: 60, count: 6 },
+    { id: 4, title: "8-Grid Layout", price: 80, count: 8 },
   ]);
 
   const [generatedImages, setGeneratedImages] = useState<
@@ -39,7 +42,6 @@ export default function GridCardsSection() {
     };
 
     setLayouts((prev) => [...prev, newLayout]);
-
     setCount("");
     setPrice("");
   };
@@ -55,8 +57,14 @@ export default function GridCardsSection() {
         </Link>
       </nav>
 
+      <div className="max-w-7xl mx-auto px-6">
+        <h2 className="text-3xl md:text-4xl font-bold text-center mb-10 text-blue-400">
+          Choose Your Photo Grid Layout
+        </h2>
+      </div>
+
       <div className="max-w-7xl mx-auto px-6 mb-10">
-        <div className="bg-white shadow-lg p-6 rounded-xl flex gap-4 items-center flex-wrap">
+        <div className="bg-blue-50 shadow-lg p-6 rounded-xl flex gap-4 items-center flex-wrap">
           <input
             type="number"
             placeholder="Image Count"
@@ -116,12 +124,8 @@ export default function GridCardsSection() {
         ))}
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-16">
-        <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
-          Choose Your Photo Grid Layout
-        </h2>
-
-        <div className="grid gap-10 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="max-w-7xl mx-auto px-6 pb-16">
+        <div className="grid gap-10 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 rounded-xl p-6 shadow-lg bg-blue-50">
           {layouts.map((layout) => (
             <GridCard
               key={layout.id}

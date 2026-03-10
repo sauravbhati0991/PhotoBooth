@@ -24,19 +24,14 @@ const Landing = () => {
         <div className="flex flex-col sm:flex-row justify-center">
           <Link
             href={"/gridLayout"}
-            className="bg-blue-300 text-white text-3xl px-8 py-4 rounded-xl font-semibold shadow-lg shadow-brand/20 hover:scale-105 transition hover:cursor-pointer"
+            className="bg-blue-300 hover:bg-blue-400 active:bg-blue-500 text-white text-3xl px-8 py-4 rounded-xl font-semibold shadow-lg shadow-brand/20 hover:scale-105 transition hover:cursor-pointer"
           >
             Start
           </Link>
         </div>
 
         <div className="mt-20 border-8 border-blue-300 rounded-3xl shadow-2xl overflow-hidden bg-slate-200 aspect-video flex items-center justify-center relative">
-          <Image
-            src={"/images-2.png"}
-            alt="preview"
-            fill
-            // className="object-cover"
-          ></Image>
+          <Image src={"/images-2.png"} alt="preview" fill></Image>
         </div>
       </main>
     </div>
