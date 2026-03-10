@@ -10,11 +10,12 @@ export default function SuccessContent() {
 
   const title = searchParams.get("title");
   const count = searchParams.get("count");
+  const img = searchParams.get("img");
 
   const [qr, setQr] = useState("");
 
   useEffect(() => {
-    const downloadUrl = `${window.location.origin}/download?title=${title}&count=${count}`;
+    const downloadUrl = `${window.location.origin}/download?title=${title}&count=${count}&img=${encodeURIComponent(img || "")}`;
 
     QRCode.toDataURL(downloadUrl).then(setQr);
   }, [title, count]);

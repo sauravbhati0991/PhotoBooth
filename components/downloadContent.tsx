@@ -9,15 +9,27 @@ export default function DownloadContent() {
   const title = searchParams.get("title");
   const count = searchParams.get("count");
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!img) return;
 
-    const a = document.createElement("a");
-    a.href = img;
-    a.download = "photobooth-image.jpg";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    try {
+      const res = await fetch(img);
+      const blob = await res.blob();
+
+      const url = window.URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "photobooth.jpg";
+
+      document.body.appendChild(a);
+      a.click();
+
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Download failed", err);
+    }
   };
 
   return (

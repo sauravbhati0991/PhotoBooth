@@ -19,6 +19,7 @@ const PaymentContent = () => {
 
   const title = searchParams.get("title") || "Photo Layout";
   const price = Number(searchParams.get("price")) || 0;
+  const img = searchParams.get("img");
 
   const [count, setCount] = useState(1);
 
@@ -31,7 +32,7 @@ const PaymentContent = () => {
     // TEST MODE (Skip Razorpay)
 
     router.push(
-      `/success?title=${encodeURIComponent(title)}&count=${count}&amount=${amount}`,
+      `/success?title=${encodeURIComponent(title)}&count=${count}&img=${encodeURIComponent(img || "")}`,
     );
 
     /*
