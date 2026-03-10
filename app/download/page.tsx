@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense } from "react";
-import DownloadContent from "@/components/donloadContent";
+import DownloadContent from "@/components/downloadContent";
 
 export default function DownloadPage() {
   return (
