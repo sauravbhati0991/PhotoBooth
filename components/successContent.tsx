@@ -8,8 +8,6 @@ export default function SuccessContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const title = searchParams.get("title");
-  const count = searchParams.get("count");
   const img = searchParams.get("img");
 
   const [qr, setQr] = useState("");
@@ -17,10 +15,9 @@ export default function SuccessContent() {
   useEffect(() => {
     if (!img) return;
 
-    const fileName = img.split("/").pop();
-    const downloadUrl = `${window.location.origin}/api/download/${fileName}`;
+    const previewUrl = `${window.location.origin}/photo?img=${encodeURIComponent(img)}`;
 
-    QRCode.toDataURL(downloadUrl).then(setQr);
+    QRCode.toDataURL(previewUrl).then(setQr);
   }, [img]);
 
   return (
@@ -43,7 +40,7 @@ export default function SuccessContent() {
 
       <button
         onClick={() => router.push("/")}
-        className="mt-4 px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition cursor-pointer"
+        className="mt-4 px-6 py-3 bg-blue-400 hover:bg-blue-500 active:bg-blue-600 text-white cursor-pointer rounded-xl"
       >
         Back to Home
       </button>

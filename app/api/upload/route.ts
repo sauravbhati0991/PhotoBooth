@@ -1,19 +1,25 @@
-import { writeFile } from "fs/promises";
-import path from "path";
+import { v2 as cloudinary } from "cloudinary";
 import { NextResponse } from "next/server";
 
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
+  api_key: process.env.CLOUDINARY_API_KEY!,
+  api_secret: process.env.CLOUDINARY_API_SECRET!,
+});
+
 export async function POST(req: Request) {
-  const { image } = await req.json();
+  try {
+    const { image } = await req.json();
 
-  const base64Data = image.replace(/^data:image\/jpeg;base64,/, "");
-  const buffer = Buffer.from(base64Data, "base64");
+    const upload = await cloudinary.uploader.upload(image, {
+      folder: "photobooth",
+    });
 
-  const fileName = `photo-${Date.now()}.jpg`;
-  const filePath = path.join(process.cwd(), "public", fileName);
-
-  await writeFile(filePath, buffer);
-
-  const url = `${process.env.NEXT_PUBLIC_SITE_URL}/${fileName}`;
-
-  return NextResponse.json({ url });
+    return NextResponse.json({
+      url: upload.secure_url,
+    });
+  } catch (error) {
+    console.log(error);
+    return NextResponse.json({ error: "Upload failed" }, { status: 500 });
+  }
 }
