@@ -9,20 +9,15 @@ export default function DownloadContent() {
   const title = searchParams.get("title");
   const count = searchParams.get("count");
 
-  const handleDownload = async () => {
+  const handleDownload = () => {
     if (!img) return;
 
-    const response = await fetch(img);
-    const blob = await response.blob();
-
-    const url = URL.createObjectURL(blob);
-
     const a = document.createElement("a");
-    a.href = url;
+    a.href = img;
     a.download = "photobooth-image.jpg";
+    document.body.appendChild(a);
     a.click();
-
-    URL.revokeObjectURL(url);
+    document.body.removeChild(a);
   };
 
   return (
@@ -44,7 +39,7 @@ export default function DownloadContent() {
 
       <button
         onClick={handleDownload}
-        className="px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600"
+        className="px-6 py-3 bg-blue-400 text-white rounded-xl hover:bg-blue-500 cursor-pointer active:bg-blue-600"
       >
         Download Photo
       </button>
