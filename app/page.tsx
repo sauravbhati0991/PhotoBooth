@@ -1,11 +1,9 @@
-import Start from "@/components/start";
-import GridCardsSection from "@/components/gridsSection";
-import PaymentPage from "@/components/paymentPage";
+import Landing from "@/components/landing";
 
 const HomePage = () => {
   return (
     <div className="w-full">
-      <Start />
+      <Landing />
     </div>
   );
 };
