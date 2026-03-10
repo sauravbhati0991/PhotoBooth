@@ -15,10 +15,13 @@ export default function SuccessContent() {
   const [qr, setQr] = useState("");
 
   useEffect(() => {
-    const downloadUrl = `${window.location.origin}/download?title=${title}&count=${count}&img=${encodeURIComponent(img || "")}`;
+    if (!img) return;
+
+    const fileName = img.split("/").pop();
+    const downloadUrl = `${window.location.origin}/api/download/${fileName}`;
 
     QRCode.toDataURL(downloadUrl).then(setQr);
-  }, [title, count]);
+  }, [img]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-6 bg-blue-50 px-6">

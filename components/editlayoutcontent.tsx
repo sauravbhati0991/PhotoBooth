@@ -76,19 +76,19 @@ export default function EditLayoutContent() {
       useCORS: true,
     });
 
-    canvas.toBlob(
-      (blob) => {
-        if (!blob) return;
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
 
-        const imageUrl = URL.createObjectURL(blob);
-
-        router.push(
-          `/payment?title=${encodeURIComponent(title)}&price=${price}&img=${encodeURIComponent(imageUrl)}`,
-        );
+    const res = await fetch("/api/upload", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
       },
-      "image/jpeg",
-      0.9,
-    );
+      body: JSON.stringify({ image: dataUrl }),
+    });
+
+    const data = await res.json();
+
+    router.push(`/success?img=${encodeURIComponent(data.url)}`);
   };
 
   return (

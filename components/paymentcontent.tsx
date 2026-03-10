@@ -32,7 +32,7 @@ const PaymentContent = () => {
     // TEST MODE (Skip Razorpay)
 
     router.push(
-      `/success?title=${encodeURIComponent(title)}&count=${count}&img=${encodeURIComponent(img || "")}`,
+      `/success?title=${encodeURIComponent(title)}&count=${count}&amount=${amount}`,
     );
 
     /*
