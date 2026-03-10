@@ -14,7 +14,7 @@ export default function SuccessContent() {
   const [qr, setQr] = useState("");
 
   useEffect(() => {
-    const downloadUrl = `${window.location.origin}/api/download?title=${title}&count=${count}`;
+    const downloadUrl = `${window.location.origin}/download?title=${title}&count=${count}`;
 
     QRCode.toDataURL(downloadUrl).then(setQr);
   }, [title, count]);
