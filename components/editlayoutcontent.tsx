@@ -1,103 +1,198 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { useState, useRef } from "react";
-import Image from "next/image";
+import { useState, useRef, useCallback, useMemo } from "react";
 import Webcam from "react-webcam";
-import html2canvas from "html2canvas-pro";
 import { ArrowLeft } from "lucide-react";
+import gifshot from "gifshot";
+
+type GifResult = { error: boolean; image: string };
 
 export default function EditLayoutContent() {
-  const searchParams = useSearchParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const title = searchParams.get("title") || "";
+  const title = searchParams.get("title") ?? "";
   const count = Number(searchParams.get("count"));
   const price = Number(searchParams.get("price"));
 
+  const [framesList, setFramesList] = useState<string[][]>([]);
   const [images, setImages] = useState<string[]>([]);
   const [cameraIndex, setCameraIndex] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
+  const [filter, setFilter] = useState("none");
+  const [capturing, setCapturing] = useState(false);
 
   const webcamRef = useRef<Webcam>(null);
   const gridRef = useRef<HTMLDivElement>(null);
 
-  function getGridCols(count: number) {
+  const filters = [
+    { name: "Original", value: "none" },
+    { name: "Black & White", value: "grayscale(1)" },
+    { name: "Sepia", value: "sepia(1)" },
+    { name: "Vintage", value: "contrast(1.2) brightness(1.1) sepia(0.5)" },
+    { name: "Cool", value: "hue-rotate(180deg)" },
+    { name: "Warm", value: "hue-rotate(-20deg) saturate(1.4)" },
+    { name: "Bright", value: "brightness(1.4)" },
+    { name: "Soft", value: "brightness(1.1) contrast(0.9)" },
+    { name: "Dramatic", value: "contrast(1.6)" },
+  ];
+
+  const getGridCols = useCallback((count: number) => {
     if (count <= 3) return count;
     if (count === 4) return 2;
     if (count <= 6) return 3;
     if (count <= 8) return 4;
     return 5;
-  }
+  }, []);
 
-  const handleUpload = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    index: number,
-  ) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const gridWidth = useMemo(() => {
+    if (count <= 1) return "max-w-sm";
+    if (count <= 4) return "max-w-xl";
+    if (count <= 6) return "max-w-4xl";
+    return "max-w-6xl";
+  }, [count]);
 
-    const imageUrl = URL.createObjectURL(file);
+  const allFilled = useMemo(
+    () => images.filter(Boolean).length === count,
+    [images, count],
+  );
 
-    setImages((prev) => {
+  const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
+
+  const handleCapture = useCallback(async () => {
+    if (!webcamRef.current || cameraIndex === null) return;
+
+    const video = webcamRef.current.video;
+    if (!video) return;
+
+    setCapturing(true);
+
+    const frames: string[] = [];
+
+    for (let i = 0; i < 6; i++) {
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) continue;
+
+      ctx.filter = filter;
+      ctx.drawImage(video, 0, 0);
+
+      frames.push(canvas.toDataURL("image/jpeg"));
+      await delay(250);
+    }
+
+    setFramesList((prev) => {
       const updated = [...prev];
-
-      if (updated[index]) {
-        URL.revokeObjectURL(updated[index]);
-      }
-
-      updated[index] = imageUrl;
+      updated[cameraIndex] = frames;
       return updated;
     });
-  };
 
-  const handleCapture = () => {
-    const imageSrc = webcamRef.current?.getScreenshot();
+    gifshot.createGIF(
+      {
+        images: frames,
+        interval: 0.25,
+        gifWidth: 400,
+        gifHeight: 400,
+        numWorkers: 4,
+        quality: 5,
+      },
+      (obj: GifResult) => {
+        if (!obj.error) {
+          setImages((prev) => {
+            const updated = [...prev];
+            updated[cameraIndex] = obj.image;
+            return updated;
+          });
+        }
 
-    if (!imageSrc || cameraIndex === null) return;
+        setCameraIndex(null);
+        setCapturing(false);
+      },
+    );
+  }, [cameraIndex, filter]);
 
-    setImages((prev) => {
-      const updated = [...prev];
-      updated[cameraIndex] = imageSrc;
-      return updated;
-    });
-
-    setCameraIndex(null);
-  };
-
-  const allFilled = images.filter(Boolean).length === count;
-
-  const generateLayoutImage = async () => {
-    if (!gridRef.current || saving) return;
+  const generateLayoutGif = async () => {
+    if (saving || framesList.length !== count) return;
 
     setSaving(true);
 
     try {
-      const canvas = await html2canvas(gridRef.current, {
-        backgroundColor: "#ffffff",
-        scale: 2,
-        useCORS: true,
-      });
+      const frameCount = 6;
+      const layoutFrames: string[] = [];
 
-      const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
+      const cols = getGridCols(count);
+      const size = 800;
+      const padding = 40;
+      const gap = 24;
 
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const usable = size - padding * 2;
+      const cell = (usable - gap * (cols - 1)) / cols;
+
+      for (let f = 0; f < frameCount; f++) {
+        const canvas = document.createElement("canvas");
+        canvas.width = size;
+        canvas.height = size;
+
+        const ctx = canvas.getContext("2d");
+        if (!ctx) continue;
+
+        ctx.fillStyle = "#60a5fa";
+        ctx.fillRect(0, 0, size, size);
+
+        for (let i = 0; i < framesList.length; i++) {
+          const frame = framesList[i]?.[f];
+          if (!frame) continue;
+
+          const img = new Image();
+          img.src = frame;
+
+          await new Promise((res) => (img.onload = res));
+
+          const row = Math.floor(i / cols);
+          const col = i % cols;
+
+          const x = padding + col * (cell + gap);
+          const y = padding + row * (cell + gap);
+
+          ctx.drawImage(img, x, y, cell, cell);
+        }
+
+        layoutFrames.push(canvas.toDataURL("image/jpeg"));
+      }
+
+      gifshot.createGIF(
+        {
+          images: layoutFrames,
+          interval: 0.25,
+          gifWidth: size,
+          gifHeight: size,
+          numWorkers: 4,
+          quality: 5,
         },
-        body: JSON.stringify({ image: dataUrl }),
-      });
+        async (obj: GifResult) => {
+          if (!obj.error) {
+            const res = await fetch("/api/upload", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ image: obj.image }),
+            });
 
-      const data = await res.json();
+            const data = await res.json();
 
-      router.push(
-        `/payment?title=${encodeURIComponent(
-          title,
-        )}&price=${price}&img=${encodeURIComponent(data.url)}`,
+            router.push(
+              `/payment?title=${encodeURIComponent(
+                title,
+              )}&price=${price}&img=${encodeURIComponent(data.url)}`,
+            );
+          }
+        },
       );
-    } catch (error) {
-      console.error("Error saving layout:", error);
+    } catch (err) {
+      console.error(err);
       setSaving(false);
     }
   };
@@ -107,7 +202,7 @@ export default function EditLayoutContent() {
       <div className="w-full bg-blue-50 px-6 pt-6">
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-xl hover:bg-blue-600 transition cursor-pointer"
+          className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-xl"
         >
           <ArrowLeft size={18} />
           Back
@@ -121,55 +216,40 @@ export default function EditLayoutContent() {
 
         <div
           ref={gridRef}
-          className={`grid gap-6 mx-auto p-6 rounded-xl ${
-            count <= 1
-              ? "max-w-sm"
-              : count <= 4
-                ? "max-w-xl"
-                : count <= 6
-                  ? "max-w-4xl"
-                  : "max-w-6xl"
-          }`}
+          className={`grid gap-6 mx-auto p-6 rounded-xl ${gridWidth}`}
           style={{
             backgroundColor: "#60a5fa",
-            gridTemplateColumns: `repeat(${getGridCols(count)}, 1fr)`,
+            gridTemplateColumns: `repeat(${getGridCols(count)},1fr)`,
           }}
         >
           {Array.from({ length: count }).map((_, index) => (
             <div
               key={index}
-              className="relative w-full aspect-square bg-white rounded-xl overflow-hidden group"
+              className="relative aspect-square bg-white rounded-xl overflow-hidden group"
             >
               {images[index] ? (
-                <Image
+                <img
                   src={images[index]}
-                  alt="photo"
-                  fill
-                  className="object-cover"
+                  className="object-cover w-full h-full"
                 />
               ) : (
                 <div className="flex flex-col items-center justify-center h-full text-gray-400">
-                  <div className="text-4xl">+</div>
-                  Add Image
+                  <span className="text-4xl">+</span>
+                  Capture GIF
                 </div>
               )}
 
-              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center gap-3 transition-opacity duration-300">
-                <label className="bg-white text-blue-600 px-4 py-2 rounded-lg cursor-pointer font-medium">
-                  {images[index] ? "Replace" : "Upload"}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => handleUpload(e, index)}
-                  />
-                </label>
-
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center gap-3 transition">
                 <button
-                  onClick={() => setCameraIndex(index)}
-                  className="px-4 py-2 rounded-lg text-white bg-blue-500 hover:bg-blue-600 transition cursor-pointer"
+                  onClick={() => !saving && setCameraIndex(index)}
+                  disabled={saving}
+                  className={`px-4 py-2 rounded-lg text-white transition ${
+                    saving
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-blue-300 hover:bg-blue-400 cursor-pointer"
+                  }`}
                 >
-                  Capture
+                  {images[index] ? "Recapture" : "Capture"}
                 </button>
               </div>
             </div>
@@ -179,9 +259,13 @@ export default function EditLayoutContent() {
         {allFilled && (
           <div className="mt-12 flex justify-center">
             <button
-              onClick={generateLayoutImage}
+              onClick={generateLayoutGif}
               disabled={saving}
-              className="bg-blue-400 hover:bg-blue-500 shadow-lg hover:shadow-xl active:bg-blue-600 disabled:bg-gray-400 text-white px-8 py-3 rounded-xl text-lg transition cursor-pointer"
+              className={`px-8 py-3 rounded-xl text-lg text-white transition ${
+                saving
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-blue-400 hover:bg-blue-500 active:bg-blue-600 shadow-lg cursor-pointer"
+              }`}
             >
               {saving ? "Saving..." : "Save Layout"}
             </button>
@@ -191,23 +275,46 @@ export default function EditLayoutContent() {
 
       {cameraIndex !== null && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-2xl flex flex-col items-center gap-4">
+          <div className="bg-white p-6 rounded-3xl flex flex-col items-center gap-4">
             <Webcam
               ref={webcamRef}
               screenshotFormat="image/jpeg"
               className="rounded-xl"
+              videoConstraints={{ facingMode: "user" }}
+              style={{ filter }}
             />
+
+            <div className="flex gap-3 overflow-x-auto scrollbar-hide max-w-md pb-2 bg-blue-50 shadow-lg p-3 rounded-lg">
+              {filters.map((f) => (
+                <button
+                  key={f.value}
+                  onClick={() => setFilter(f.value)}
+                  className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition cursor-pointer ${
+                    filter === f.value
+                      ? "bg-blue-400 text-white"
+                      : "bg-blue-200 hover:bg-blue-300"
+                  }`}
+                >
+                  {f.name}
+                </button>
+              ))}
+            </div>
 
             <button
               onClick={handleCapture}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition"
+              disabled={capturing}
+              className={`px-6 py-2 rounded-xl text-white transition ${
+                capturing
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-blue-500 hover:bg-blue-600 cursor-pointer"
+              }`}
             >
-              Capture Photo
+              {capturing ? "Capturing..." : "Capture GIF"}
             </button>
 
             <button
               onClick={() => setCameraIndex(null)}
-              className="bg-gray-300 px-4 py-2 rounded-lg hover:bg-gray-400 transition"
+              className="bg-gray-300 px-6 py-2 rounded-xl"
             >
               Cancel
             </button>
