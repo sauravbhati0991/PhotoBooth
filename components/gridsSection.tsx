@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import GridCard from "./gridCard";
 
@@ -10,41 +10,28 @@ const PhotoGrid = dynamic(() => import("@/utils/photogrid"), {
 });
 
 interface GridItem {
-  id: number;
+  _id: string;
   title: string;
   price: number;
   count: number;
 }
 
 export default function GridCardsSection() {
-  const [layouts, setLayouts] = useState<GridItem[]>([
-    { id: 1, title: "Single Layout", price: 20, count: 1 },
-    { id: 2, title: "4-Grid Layout", price: 40, count: 4 },
-    { id: 3, title: "6-Grid Layout", price: 60, count: 6 },
-    { id: 4, title: "8-Grid Layout", price: 80, count: 8 },
-  ]);
-
+  const [layouts, setLayouts] = useState<GridItem[]>([]);
   const [generatedImages, setGeneratedImages] = useState<
-    Record<number, string>
+    Record<string, string>
   >({});
 
-  const [count, setCount] = useState("");
-  const [price, setPrice] = useState("");
-
-  const addLayout = () => {
-    if (!count || !price) return;
-
-    const newLayout: GridItem = {
-      id: Date.now(),
-      title: `${count}-Grid Layout`,
-      count: Number(count),
-      price: Number(price),
-    };
-
-    setLayouts((prev) => [...prev, newLayout]);
-    setCount("");
-    setPrice("");
-  };
+  /* Fetch layouts */
+  useEffect(() => {
+    fetch("/api/layouts")
+      .then(async (res) => {
+        if (!res.ok) return [];
+        return res.json();
+      })
+      .then((data) => setLayouts(data || []))
+      .catch(() => setLayouts([]));
+  }, []);
 
   return (
     <>
@@ -63,18 +50,19 @@ export default function GridCardsSection() {
         </h2>
       </div>
 
+      {/* Hidden preview generator */}
       <div className="fixed top-0 left-0 opacity-0 pointer-events-none -z-50">
         {layouts.map((layout) => (
           <PhotoGrid
-            key={layout.id}
+            key={layout._id}
             count={layout.count}
             onImageGenerated={(img: string) =>
               setGeneratedImages((prev) => {
-                if (prev[layout.id]) return prev;
+                if (prev[layout._id]) return prev;
 
                 return {
                   ...prev,
-                  [layout.id]: img,
+                  [layout._id]: img,
                 };
               })
             }
@@ -86,10 +74,10 @@ export default function GridCardsSection() {
         <div className="grid gap-10 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 rounded-xl p-6 shadow-lg bg-blue-50">
           {layouts.map((layout) => (
             <GridCard
-              key={layout.id}
+              key={layout._id}
               title={layout.title}
               price={layout.price}
-              image={generatedImages[layout.id] ?? ""}
+              image={generatedImages[layout._id] ?? ""}
               count={layout.count}
             />
           ))}
