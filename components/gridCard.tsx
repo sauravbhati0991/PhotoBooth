@@ -22,16 +22,16 @@ const GridCard = ({
   onDelete,
 }: GridCardProps) => {
   return (
-    <div className="group relative rounded-3xl overflow-hidden bg-white shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-2">
-      {/* Image */}
-      <div className="relative w-full aspect-[6/5] overflow-hidden bg-gray-100">
+    <div className="group relative flex flex-col rounded-3xl overflow-hidden bg-white shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-2">
+      {/* Preview Area */}
+      <div className="relative w-full h-[220px] flex items-center justify-center bg-blue-50 overflow-hidden">
         {image ? (
           <Image
             src={image}
             alt={title}
             fill
             unoptimized
-            className="object-cover transition-transform duration-700 group-hover:scale-110"
+            className="object-contain p-6 transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
           <div className="flex items-center justify-center h-full text-gray-400 text-sm">
@@ -47,7 +47,7 @@ const GridCard = ({
           <p className="text-xl font-bold text-blue-400 mt-1">₹{price}</p>
         </div>
 
-        {/* USER BUTTON */}
+        {/* USER MODE */}
         {mode === "user" && (
           <Link
             href={{
@@ -60,11 +60,11 @@ const GridCard = ({
           </Link>
         )}
 
-        {/* ADMIN BUTTON */}
+        {/* ADMIN MODE */}
         {mode === "admin" && (
           <button
             onClick={onDelete}
-            className="flex items-center cursor-pointer gap-2 px-5 py-2 rounded-xl bg-red-400 hover:bg-red-500 text-white font-semibold shadow-md hover:bg-red-600 transition"
+            className="flex items-center cursor-pointer gap-2 px-5 py-2 rounded-xl bg-red-400 hover:bg-red-500 text-white font-semibold shadow-md transition"
           >
             <Trash2 size={16} />
             Delete

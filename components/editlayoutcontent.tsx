@@ -42,9 +42,20 @@ export default function EditLayoutContent() {
     if (count <= 3) return count;
     if (count === 4) return 2;
     if (count <= 6) return 3;
-    if (count <= 8) return 4;
+    if (count <= 12) return 4;
     return 5;
   }, []);
+
+  const cols = getGridCols(count);
+
+  const rows: number[] = [];
+  let remaining = count;
+
+  while (remaining > 0) {
+    const cells = Math.min(cols, remaining);
+    rows.push(cells);
+    remaining -= cells;
+  }
 
   const gridWidth = useMemo(() => {
     if (count <= 1) return "max-w-sm";
@@ -158,7 +169,25 @@ export default function EditLayoutContent() {
           const x = padding + col * (cell + gap);
           const y = padding + row * (cell + gap);
 
+          const radius = 24;
+
+          ctx.save();
+          ctx.beginPath();
+          ctx.moveTo(x + radius, y);
+          ctx.lineTo(x + cell - radius, y);
+          ctx.quadraticCurveTo(x + cell, y, x + cell, y + radius);
+          ctx.lineTo(x + cell, y + cell - radius);
+          ctx.quadraticCurveTo(x + cell, y + cell, x + cell - radius, y + cell);
+          ctx.lineTo(x + radius, y + cell);
+          ctx.quadraticCurveTo(x, y + cell, x, y + cell - radius);
+          ctx.lineTo(x, y + radius);
+          ctx.quadraticCurveTo(x, y, x + radius, y);
+          ctx.closePath();
+          ctx.clip();
+
           ctx.drawImage(img, x, y, cell, cell);
+
+          ctx.restore();
         }
 
         layoutFrames.push(canvas.toDataURL("image/jpeg"));
@@ -202,7 +231,7 @@ export default function EditLayoutContent() {
       <div className="w-full bg-blue-50 px-6 pt-6">
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-xl"
+          className="flex items-center gap-2 cursor-pointer bg-blue-500 text-white px-4 py-2 rounded-xl"
         >
           <ArrowLeft size={18} />
           Back
@@ -216,42 +245,48 @@ export default function EditLayoutContent() {
 
         <div
           ref={gridRef}
-          className={`grid gap-6 mx-auto p-6 rounded-xl ${gridWidth}`}
-          style={{
-            backgroundColor: "#60a5fa",
-            gridTemplateColumns: `repeat(${getGridCols(count)},1fr)`,
-          }}
+          className="flex flex-col gap-2 w-fit mx-auto p-3 rounded-xl"
+          style={{ backgroundColor: "#60a5fa" }}
         >
-          {Array.from({ length: count }).map((_, index) => (
-            <div
-              key={index}
-              className="relative aspect-square bg-white rounded-xl overflow-hidden group"
-            >
-              {images[index] ? (
-                <img
-                  src={images[index]}
-                  className="object-cover w-full h-full"
-                />
-              ) : (
-                <div className="flex flex-col items-center justify-center h-full text-gray-400">
-                  <span className="text-4xl">+</span>
-                  Capture GIF
-                </div>
-              )}
+          {rows.map((cellsInRow, rowIndex) => (
+            <div key={rowIndex} className="flex justify-center flex-wrap gap-2">
+              {Array.from({ length: cellsInRow }).map((_, colIndex) => {
+                const index =
+                  rows.slice(0, rowIndex).reduce((a, b) => a + b, 0) + colIndex;
 
-              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center gap-3 transition">
-                <button
-                  onClick={() => !saving && setCameraIndex(index)}
-                  disabled={saving}
-                  className={`px-4 py-2 rounded-lg text-white transition ${
-                    saving
-                      ? "bg-gray-400 cursor-not-allowed"
-                      : "bg-blue-300 hover:bg-blue-400 cursor-pointer"
-                  }`}
-                >
-                  {images[index] ? "Recapture" : "Capture"}
-                </button>
-              </div>
+                return (
+                  <div
+                    key={index}
+                    className="relative w-32 sm:w-36 md:w-40 aspect-square bg-white rounded-xl overflow-hidden group"
+                  >
+                    {images[index] ? (
+                      <img
+                        src={images[index]}
+                        className="object-cover w-full h-full"
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                        <span className="text-4xl">+</span>
+                        Add GIF
+                      </div>
+                    )}
+
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center gap-3 transition">
+                      <button
+                        onClick={() => !saving && setCameraIndex(index)}
+                        disabled={saving}
+                        className={`px-4 py-2 rounded-lg text-white transition ${
+                          saving
+                            ? "bg-gray-400 cursor-not-allowed"
+                            : "bg-blue-300 hover:bg-blue-400 cursor-pointer"
+                        }`}
+                      >
+                        {images[index] ? "Recapture" : "Capture"}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           ))}
         </div>
