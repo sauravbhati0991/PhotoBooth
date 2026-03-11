@@ -25,46 +25,98 @@ export default function GridCardsSectionAdmin() {
   const [count, setCount] = useState("");
   const [price, setPrice] = useState("");
 
-  /* Fetch layouts from DB */
+  /* ---------------- FETCH LAYOUTS ---------------- */
+
   useEffect(() => {
-    fetch("/api/layouts")
-      .then(async (res) => {
-        if (!res.ok) return [];
-        return res.json();
-      })
-      .then((data) => setLayouts(data || []))
-      .catch(() => setLayouts([]));
+    const loadLayouts = async () => {
+      try {
+        const res = await fetch("/api/layouts");
+
+        if (!res.ok) return;
+
+        const data = await res.json();
+
+        const cleaned = data.map((layout: any) => ({
+          _id: layout._id?.toString(),
+          title: layout.title,
+          price: layout.price,
+          count: layout.count,
+        }));
+
+        setLayouts(cleaned);
+      } catch (error) {
+        console.error("Failed to load layouts:", error);
+      }
+    };
+
+    loadLayouts();
   }, []);
 
-  /* Add layout */
+  /* ---------------- ADD LAYOUT ---------------- */
+
   const addLayout = async () => {
     if (!count || !price) return;
 
-    const res = await fetch("/api/layouts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title: `${count}-Grid Layout`,
-        price: Number(price),
-        count: Number(count),
-      }),
-    });
+    try {
+      const res = await fetch("/api/layouts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: `${count}-Grid Layout`,
+          price: Number(price),
+          count: Number(count),
+        }),
+      });
 
-    const newLayout = await res.json();
+      if (!res.ok) {
+        console.error("Failed to add layout");
+        return;
+      }
 
-    setLayouts((prev) => [...prev, newLayout]);
+      const newLayout = await res.json();
 
-    setCount("");
-    setPrice("");
+      setLayouts((prev) => [
+        ...prev,
+        {
+          _id: newLayout._id.toString(),
+          title: newLayout.title,
+          price: newLayout.price,
+          count: newLayout.count,
+        },
+      ]);
+
+      setCount("");
+      setPrice("");
+    } catch (error) {
+      console.error("Add layout error:", error);
+    }
   };
 
-  /* Delete layout */
-  const deleteLayout = async (id: string) => {
-    await fetch(`/api/layouts/${id}`, {
-      method: "DELETE",
-    });
+  /* ---------------- DELETE LAYOUT ---------------- */
 
-    setLayouts((prev) => prev.filter((layout) => layout._id !== id));
+  const deleteLayout = async (id: string) => {
+    try {
+      const res = await fetch(`/api/layouts/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        console.error("Delete failed");
+        return;
+      }
+
+      setLayouts((prev) => prev.filter((layout) => layout._id !== id));
+
+      setGeneratedImages((prev) => {
+        const updated = { ...prev };
+        delete updated[id];
+        return updated;
+      });
+    } catch (error) {
+      console.error("Delete error:", error);
+    }
   };
 
   return (
@@ -84,6 +136,7 @@ export default function GridCardsSectionAdmin() {
         </h2>
       </div>
 
+      {/* ADD GRID */}
       <div className="max-w-7xl mx-auto px-6 mb-10">
         <div className="bg-blue-50 shadow-lg p-6 rounded-xl flex gap-4 items-center flex-wrap">
           <input
@@ -146,6 +199,7 @@ export default function GridCardsSectionAdmin() {
         ))}
       </div>
 
+      {/* GRID CARDS */}
       <div className="max-w-7xl mx-auto px-6 pb-16">
         <div className="grid gap-10 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 rounded-xl p-6 shadow-lg bg-blue-50">
           {layouts.map((layout) => (
