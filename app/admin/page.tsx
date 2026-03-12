@@ -25,8 +25,6 @@ export default function GridCardsSectionAdmin() {
   const [count, setCount] = useState("");
   const [price, setPrice] = useState("");
 
-  /* ---------------- FETCH LAYOUTS ---------------- */
-
   useEffect(() => {
     const loadLayouts = async () => {
       try {
@@ -51,8 +49,6 @@ export default function GridCardsSectionAdmin() {
 
     loadLayouts();
   }, []);
-
-  /* ---------------- ADD LAYOUT ---------------- */
 
   const addLayout = async () => {
     if (!count || !price) return;
@@ -94,8 +90,6 @@ export default function GridCardsSectionAdmin() {
     }
   };
 
-  /* ---------------- DELETE LAYOUT ---------------- */
-
   const deleteLayout = async (id: string) => {
     try {
       const res = await fetch(`/api/layouts/${id}`, {
@@ -136,7 +130,6 @@ export default function GridCardsSectionAdmin() {
         </h2>
       </div>
 
-      {/* ADD GRID */}
       <div className="max-w-7xl mx-auto px-6 mb-10">
         <div className="bg-blue-50 shadow-lg p-6 rounded-xl flex gap-4 items-center flex-wrap">
           <input
@@ -179,7 +172,6 @@ export default function GridCardsSectionAdmin() {
         </div>
       </div>
 
-      {/* Hidden preview generator */}
       <div className="fixed top-0 left-0 opacity-0 pointer-events-none -z-50">
         {layouts.map((layout) => (
           <PhotoGrid
@@ -199,7 +191,6 @@ export default function GridCardsSectionAdmin() {
         ))}
       </div>
 
-      {/* GRID CARDS */}
       <div className="max-w-7xl mx-auto px-6 pb-16">
         <div className="grid gap-10 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 rounded-xl p-6 shadow-lg bg-blue-50">
           {layouts.map((layout) => (

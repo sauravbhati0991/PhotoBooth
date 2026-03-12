@@ -46,7 +46,6 @@ export default function GridEdit() {
                 key={index}
                 className="group relative min-w-[250px] rounded-lg overflow-hidden bg-white hover:shadow-2xl transition-all duration-500 hover:-translate-y-2"
               >
-                {/* IMAGE */}
                 <div className="relative w-full aspect-[7/5] overflow-hidden">
                   <Image
                     src={layouts[id]?.[index] || "/image-1.png"}

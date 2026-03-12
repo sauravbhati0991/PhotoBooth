@@ -56,12 +56,10 @@ export default function DownloadContent() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-blue-50 px-6 py-10 gap-8">
-      {/* Title */}
       <h1 className="text-3xl md:text-4xl font-bold text-blue-500 text-center">
         Your Photo 📸
       </h1>
 
-      {/* Image Preview */}
       {img && (
         <div className="max-w-[90vw] sm:max-w-[400px] md:max-w-[550px] lg:max-w-[650px] rounded-2xl overflow-hidden shadow-xl bg-white">
           <img
@@ -72,9 +70,7 @@ export default function DownloadContent() {
         </div>
       )}
 
-      {/* Buttons */}
       <div className="flex gap-4 flex-wrap justify-center">
-        {/* Download */}
         <button
           onClick={handleDownload}
           disabled={downloading}
@@ -88,7 +84,6 @@ export default function DownloadContent() {
           {downloading ? "Downloading..." : "Download"}
         </button>
 
-        {/* Share */}
         <button
           onClick={handleShare}
           className="px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl font-medium transition cursor-pointer"

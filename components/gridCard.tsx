@@ -23,7 +23,6 @@ const GridCard = ({
 }: GridCardProps) => {
   return (
     <div className="group relative flex flex-col rounded-3xl overflow-hidden bg-white shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-2">
-      {/* Preview Area */}
       <div className="relative w-full h-[220px] flex items-center justify-center bg-blue-50 overflow-hidden">
         {image ? (
           <Image
@@ -40,14 +39,12 @@ const GridCard = ({
         )}
       </div>
 
-      {/* Content */}
       <div className="flex items-center justify-between p-6">
         <div>
           <h3 className="text-xl font-semibold text-gray-800">{title}</h3>
           <p className="text-xl font-bold text-blue-400 mt-1">₹{price}</p>
         </div>
 
-        {/* USER MODE */}
         {mode === "user" && (
           <Link
             href={{
@@ -60,7 +57,6 @@ const GridCard = ({
           </Link>
         )}
 
-        {/* ADMIN MODE */}
         {mode === "admin" && (
           <button
             onClick={onDelete}

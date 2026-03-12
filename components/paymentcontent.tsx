@@ -76,7 +76,6 @@ const PaymentContent = () => {
 
   return (
     <>
-      {/* Back Button */}
       <div className="w-full px-12 pt-6 bg-blue-50">
         <button
           onClick={() => router.back()}
@@ -88,7 +87,6 @@ const PaymentContent = () => {
       </div>
 
       <div className="min-h-screen bg-blue-50 px-6 pb-16">
-        {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-blue-400">Payment</h1>
           <p className="text-gray-600 mt-2">
@@ -97,7 +95,6 @@ const PaymentContent = () => {
         </div>
 
         <div className="max-w-2xl mx-auto space-y-8">
-          {/* Order Summary */}
           <div className="bg-white rounded-2xl shadow-sm p-6 border border-blue-100">
             <div className="flex items-center gap-3 mb-6">
               <ShoppingCart className="text-blue-400" />
@@ -124,7 +121,6 @@ const PaymentContent = () => {
             </div>
           </div>
 
-          {/* Promo Code */}
           <div className="bg-white rounded-2xl shadow-sm p-6 border border-blue-100">
             <div className="flex items-center gap-3 mb-6">
               <Tag className="text-blue-400" />
@@ -146,7 +142,6 @@ const PaymentContent = () => {
             </div>
           </div>
 
-          {/* Payment Method */}
           <div className="bg-white rounded-2xl shadow-sm p-6 border border-blue-100">
             <div className="flex items-center gap-3 mb-6">
               <CreditCard className="text-blue-400" />
@@ -169,7 +164,6 @@ const PaymentContent = () => {
             </div>
           </div>
 
-          {/* Payment Button */}
           <button
             onClick={createOrder}
             disabled={loading}

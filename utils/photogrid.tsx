@@ -11,7 +11,6 @@ interface Props {
 export default function PhotoGrid({ count, onImageGenerated }: Props) {
   const ref = useRef<HTMLDivElement>(null);
 
-  /* Generate preview image */
   useEffect(() => {
     if (!ref.current || !onImageGenerated) return;
 
@@ -20,7 +19,6 @@ export default function PhotoGrid({ count, onImageGenerated }: Props) {
     });
   }, [count, onImageGenerated]);
 
-  /* Determine max columns dynamically */
   const getMaxCols = (count: number) => {
     if (count <= 3) return count;
     if (count === 4) return 2;
@@ -30,8 +28,6 @@ export default function PhotoGrid({ count, onImageGenerated }: Props) {
   };
 
   const maxCols = getMaxCols(count);
-
-  /* Create rows dynamically */
   const rows: number[] = [];
   let remaining = count;
 

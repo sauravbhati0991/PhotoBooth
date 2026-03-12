@@ -22,7 +22,6 @@ export default function GridCardsSection() {
     Record<string, string>
   >({});
 
-  /* Fetch layouts */
   useEffect(() => {
     fetch("/api/layouts")
       .then(async (res) => {
@@ -50,7 +49,6 @@ export default function GridCardsSection() {
         </h2>
       </div>
 
-      {/* Hidden preview generator */}
       <div className="fixed top-0 left-0 opacity-0 pointer-events-none -z-50">
         {layouts.map((layout) => (
           <PhotoGrid
