@@ -12,13 +12,16 @@ export async function DELETE(
     const client = await clientPromise;
     const db = client.db("photobooth");
 
-    await db.collection("layouts").deleteOne({
+    const result = await db.collection("layouts").deleteOne({
       _id: new ObjectId(id),
     });
 
-    return Response.json({ success: true });
+    return Response.json({
+      success: true,
+      deleted: result.deletedCount,
+    });
   } catch (error) {
-    console.error("Delete layout error:", error);
+    console.error("Delete error:", error);
 
     return Response.json({ error: "Failed to delete layout" }, { status: 500 });
   }
