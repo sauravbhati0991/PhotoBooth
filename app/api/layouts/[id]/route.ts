@@ -1,25 +1,24 @@
+import { NextRequest } from "next/server";
 import clientPromise from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
-import { NextRequest } from "next/server";
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } },
+  context: { params: Promise<{ id: string }> },
 ) {
   try {
+    const { id } = await context.params;
+
     const client = await clientPromise;
     const db = client.db("photobooth");
 
-    const result = await db.collection("layouts").deleteOne({
-      _id: new ObjectId(params.id),
+    await db.collection("layouts").deleteOne({
+      _id: new ObjectId(id),
     });
 
-    return Response.json({
-      success: true,
-      deleted: result.deletedCount,
-    });
+    return Response.json({ success: true });
   } catch (error) {
-    console.error("Delete error:", error);
+    console.error("DELETE layout error:", error);
 
     return Response.json({ error: "Failed to delete layout" }, { status: 500 });
   }
