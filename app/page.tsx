@@ -1,9 +1,9 @@
-import Landing from "@/components/landing";
+import GridCardsSection from "@/components/gridsSection";
 
 const HomePage = () => {
   return (
     <div className="w-full">
-      <Landing />
+      <GridCardsSection />
     </div>
   );
 };

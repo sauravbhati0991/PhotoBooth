@@ -1,5 +1,4 @@
 import { v2 as cloudinary } from "cloudinary";
-import { NextResponse } from "next/server";
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
@@ -12,14 +11,15 @@ export async function POST(req: Request) {
     const { image } = await req.json();
 
     const upload = await cloudinary.uploader.upload(image, {
-      folder: "photobooth",
+      folder: "photobooth/layouts",
     });
 
-    return NextResponse.json({
+    return Response.json({
       url: upload.secure_url,
     });
   } catch (error) {
-    console.log(error);
-    return NextResponse.json({ error: "Upload failed" }, { status: 500 });
+    console.error("Upload error:", error);
+
+    return Response.json({ error: "Upload failed" }, { status: 500 });
   }
 }

@@ -5,6 +5,7 @@ import { useState, useRef, useCallback, useMemo } from "react";
 import Webcam from "react-webcam";
 import { ArrowLeft } from "lucide-react";
 import gifshot from "gifshot";
+import html2canvas from "html2canvas";
 
 type GifResult = { error: boolean; image: string };
 
@@ -15,16 +16,22 @@ export default function EditLayoutContent() {
   const title = searchParams.get("title") ?? "";
   const count = Number(searchParams.get("count"));
   const price = Number(searchParams.get("price"));
+  const rows = Number(searchParams.get("rows"));
+  const cols = Number(searchParams.get("cols"));
+  const bgType = searchParams.get("bgType");
+  const bgValue = searchParams.get("bgValue") ?? "#60a5fa";
 
-  const [framesList, setFramesList] = useState<string[][]>([]);
-  const [images, setImages] = useState<string[]>([]);
+  const [framesList, setFramesList] = useState<string[][]>(
+    Array(count).fill([]),
+  );
+  const [images, setImages] = useState<string[]>(Array(count).fill(""));
   const [cameraIndex, setCameraIndex] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [filter, setFilter] = useState("none");
   const [capturing, setCapturing] = useState(false);
+  const gridRef = useRef<HTMLDivElement | null>(null);
 
   const webcamRef = useRef<Webcam>(null);
-  const gridRef = useRef<HTMLDivElement>(null);
 
   const filters = [
     { name: "Original", value: "none" },
@@ -38,38 +45,12 @@ export default function EditLayoutContent() {
     { name: "Dramatic", value: "contrast(1.6)" },
   ];
 
-  const getGridCols = useCallback((count: number) => {
-    if (count <= 3) return count;
-    if (count === 4) return 2;
-    if (count <= 6) return 3;
-    if (count <= 12) return 4;
-    return 5;
-  }, []);
-
-  const cols = getGridCols(count);
-
-  const rows: number[] = [];
-  let remaining = count;
-
-  while (remaining > 0) {
-    const cells = Math.min(cols, remaining);
-    rows.push(cells);
-    remaining -= cells;
-  }
-
-  const gridWidth = useMemo(() => {
-    if (count <= 1) return "max-w-sm";
-    if (count <= 4) return "max-w-xl";
-    if (count <= 6) return "max-w-4xl";
-    return "max-w-6xl";
-  }, [count]);
+  const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
   const allFilled = useMemo(
     () => images.filter(Boolean).length === count,
     [images, count],
   );
-
-  const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
   const handleCapture = useCallback(async () => {
     if (!webcamRef.current || cameraIndex === null) return;
@@ -132,27 +113,43 @@ export default function EditLayoutContent() {
     setSaving(true);
 
     try {
-      const frameCount = 6;
+      const FRAME_COUNT = 6;
+
+      const CELL_SIZE = 260;
+      const GAP = 20;
+      const PADDING = 40;
+
       const layoutFrames: string[] = [];
 
-      const cols = getGridCols(count);
-      const size = 800;
-      const padding = 40;
-      const gap = 24;
+      const canvasWidth = cols * CELL_SIZE + GAP * (cols - 1) + PADDING * 2;
 
-      const usable = size - padding * 2;
-      const cell = (usable - gap * (cols - 1)) / cols;
+      const canvasHeight = rows * CELL_SIZE + GAP * (rows - 1) + PADDING * 2;
 
-      for (let f = 0; f < frameCount; f++) {
+      for (let f = 0; f < FRAME_COUNT; f++) {
         const canvas = document.createElement("canvas");
-        canvas.width = size;
-        canvas.height = size;
+
+        canvas.width = canvasWidth;
+        canvas.height = canvasHeight;
 
         const ctx = canvas.getContext("2d");
         if (!ctx) continue;
 
-        ctx.fillStyle = "#60a5fa";
-        ctx.fillRect(0, 0, size, size);
+        /* -------- BACKGROUND -------- */
+
+        if (bgType === "image") {
+          const bg = new Image();
+          bg.crossOrigin = "anonymous";
+          bg.src = bgValue;
+
+          await new Promise((res) => (bg.onload = res));
+
+          ctx.drawImage(bg, 0, 0, canvasWidth, canvasHeight);
+        } else {
+          ctx.fillStyle = bgValue;
+          ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+        }
+
+        /* -------- DRAW PHOTOS -------- */
 
         for (let i = 0; i < framesList.length; i++) {
           const frame = framesList[i]?.[f];
@@ -166,26 +163,33 @@ export default function EditLayoutContent() {
           const row = Math.floor(i / cols);
           const col = i % cols;
 
-          const x = padding + col * (cell + gap);
-          const y = padding + row * (cell + gap);
+          const x = PADDING + col * (CELL_SIZE + GAP);
+          const y = PADDING + row * (CELL_SIZE + GAP);
 
           const radius = 24;
 
           ctx.save();
+
           ctx.beginPath();
           ctx.moveTo(x + radius, y);
-          ctx.lineTo(x + cell - radius, y);
-          ctx.quadraticCurveTo(x + cell, y, x + cell, y + radius);
-          ctx.lineTo(x + cell, y + cell - radius);
-          ctx.quadraticCurveTo(x + cell, y + cell, x + cell - radius, y + cell);
-          ctx.lineTo(x + radius, y + cell);
-          ctx.quadraticCurveTo(x, y + cell, x, y + cell - radius);
+          ctx.lineTo(x + CELL_SIZE - radius, y);
+          ctx.quadraticCurveTo(x + CELL_SIZE, y, x + CELL_SIZE, y + radius);
+          ctx.lineTo(x + CELL_SIZE, y + CELL_SIZE - radius);
+          ctx.quadraticCurveTo(
+            x + CELL_SIZE,
+            y + CELL_SIZE,
+            x + CELL_SIZE - radius,
+            y + CELL_SIZE,
+          );
+          ctx.lineTo(x + radius, y + CELL_SIZE);
+          ctx.quadraticCurveTo(x, y + CELL_SIZE, x, y + CELL_SIZE - radius);
           ctx.lineTo(x, y + radius);
           ctx.quadraticCurveTo(x, y, x + radius, y);
           ctx.closePath();
+
           ctx.clip();
 
-          ctx.drawImage(img, x, y, cell, cell);
+          ctx.drawImage(img, x, y, CELL_SIZE, CELL_SIZE);
 
           ctx.restore();
         }
@@ -193,12 +197,14 @@ export default function EditLayoutContent() {
         layoutFrames.push(canvas.toDataURL("image/jpeg"));
       }
 
+      /* -------- CREATE FINAL GIF -------- */
+
       gifshot.createGIF(
         {
           images: layoutFrames,
           interval: 0.25,
-          gifWidth: size,
-          gifHeight: size,
+          gifWidth: canvasWidth,
+          gifHeight: canvasHeight,
           numWorkers: 4,
           quality: 5,
         },
@@ -206,25 +212,33 @@ export default function EditLayoutContent() {
           if (!obj.error) {
             const res = await fetch("/api/upload", {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
+              headers: {
+                "Content-Type": "application/json",
+              },
               body: JSON.stringify({ image: obj.image }),
             });
 
             const data = await res.json();
+
+            setSaving(false); // ✅ stop loading here
 
             router.push(
               `/payment?title=${encodeURIComponent(
                 title,
               )}&price=${price}&img=${encodeURIComponent(data.url)}`,
             );
+          } else {
+            setSaving(false); // handle error
           }
         },
       );
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error(error);
       setSaving(false);
     }
   };
+
+  const gridCells = Array.from({ length: count });
 
   return (
     <>
@@ -245,48 +259,44 @@ export default function EditLayoutContent() {
 
         <div
           ref={gridRef}
-          className="flex flex-col gap-2 w-fit mx-auto p-3 rounded-xl"
-          style={{ backgroundColor: "#60a5fa" }}
+          id="capture-grid"
+          className="grid gap-3 mx-auto p-6 rounded-2xl w-fit"
+          style={{
+            background:
+              bgType === "image"
+                ? `url(${bgValue}) center/cover no-repeat`
+                : bgValue,
+            gridTemplateColumns: `repeat(${cols}, minmax(0,1fr))`,
+          }}
         >
-          {rows.map((cellsInRow, rowIndex) => (
-            <div key={rowIndex} className="flex justify-center flex-wrap gap-2">
-              {Array.from({ length: cellsInRow }).map((_, colIndex) => {
-                const index =
-                  rows.slice(0, rowIndex).reduce((a, b) => a + b, 0) + colIndex;
+          {gridCells.map((_, index) => (
+            <div
+              key={index}
+              className="relative w-32 sm:w-36 md:w-40 aspect-square bg-white rounded-lg overflow-hidden group"
+            >
+              {images[index] ? (
+                <img
+                  src={images[index]}
+                  className="object-cover w-full h-full"
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                  <span className="text-4xl">+</span>
+                  Add GIF
+                </div>
+              )}
 
-                return (
-                  <div
-                    key={index}
-                    className="relative w-32 sm:w-36 md:w-40 aspect-square bg-white rounded-xl overflow-hidden group"
-                  >
-                    {images[index] ? (
-                      <img
-                        src={images[index]}
-                        className="object-cover w-full h-full"
-                      />
-                    ) : (
-                      <div className="flex flex-col items-center justify-center h-full text-gray-400">
-                        <span className="text-4xl">+</span>
-                        Add GIF
-                      </div>
-                    )}
-
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center gap-3 transition">
-                      <button
-                        onClick={() => !saving && setCameraIndex(index)}
-                        disabled={saving}
-                        className={`px-4 py-2 rounded-lg text-white transition ${
-                          saving
-                            ? "bg-gray-400 cursor-not-allowed"
-                            : "bg-blue-300 hover:bg-blue-400 cursor-pointer"
-                        }`}
-                      >
-                        {images[index] ? "Recapture" : "Capture"}
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
+                <button
+                  onClick={() => !saving && setCameraIndex(index)}
+                  disabled={saving}
+                  className={`px-4 py-2 rounded-lg cursor-pointer text-white ${
+                    saving ? "bg-gray-400" : "bg-blue-300 hover:bg-blue-400"
+                  }`}
+                >
+                  {images[index] ? "Recapture" : "Capture"}
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -296,10 +306,10 @@ export default function EditLayoutContent() {
             <button
               onClick={generateLayoutGif}
               disabled={saving}
-              className={`px-8 py-3 rounded-xl text-lg text-white transition ${
+              className={`px-8 py-3 rounded-xl text-lg text-white ${
                 saving
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-blue-400 hover:bg-blue-500 active:bg-blue-600 shadow-lg cursor-pointer"
+                  ? "bg-gray-400"
+                  : "bg-blue-400 hover:bg-blue-500 cursor-pointer"
               }`}
             >
               {saving ? "Saving..." : "Save Layout"}
@@ -319,12 +329,12 @@ export default function EditLayoutContent() {
               style={{ filter }}
             />
 
-            <div className="flex gap-3 overflow-x-auto scrollbar-hide max-w-md pb-2 bg-blue-50 shadow-lg p-3 rounded-lg">
+            <div className="flex gap-3 overflow-x-auto max-w-md pb-2 scrollbar-hide bg-blue-50 shadow-lg p-3 rounded-lg">
               {filters.map((f) => (
                 <button
                   key={f.value}
                   onClick={() => setFilter(f.value)}
-                  className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition cursor-pointer ${
+                  className={`px-4 py-2 rounded-xl cursor-pointer text-sm ${
                     filter === f.value
                       ? "bg-blue-400 text-white"
                       : "bg-blue-200 hover:bg-blue-300"
@@ -338,9 +348,9 @@ export default function EditLayoutContent() {
             <button
               onClick={handleCapture}
               disabled={capturing}
-              className={`px-6 py-2 rounded-xl text-white transition ${
+              className={`px-6 py-2 rounded-xl text-white ${
                 capturing
-                  ? "bg-gray-400 cursor-not-allowed"
+                  ? "bg-gray-400"
                   : "bg-blue-500 hover:bg-blue-600 cursor-pointer"
               }`}
             >
@@ -349,7 +359,7 @@ export default function EditLayoutContent() {
 
             <button
               onClick={() => setCameraIndex(null)}
-              className="bg-gray-300 px-6 py-2 rounded-xl"
+              className="bg-gray-300 px-6 py-2 rounded-xl cursor-pointer"
             >
               Cancel
             </button>

@@ -4,16 +4,14 @@ import { NextRequest } from "next/server";
 
 export async function DELETE(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> },
+  { params }: { params: { id: string } },
 ) {
   try {
-    const { id } = await context.params;
-
     const client = await clientPromise;
     const db = client.db("photobooth");
 
     const result = await db.collection("layouts").deleteOne({
-      _id: new ObjectId(id),
+      _id: new ObjectId(params.id),
     });
 
     return Response.json({

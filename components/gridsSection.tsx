@@ -2,34 +2,48 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import dynamic from "next/dynamic";
 import GridCard from "./gridCard";
 
-const PhotoGrid = dynamic(() => import("@/utils/photogrid"), {
-  ssr: false,
-});
+interface LayoutFromDB {
+  _id: string;
+  count: number;
+}
 
 interface GridItem {
   _id: string;
   title: string;
-  price: number;
   count: number;
 }
 
 export default function GridCardsSection() {
   const [layouts, setLayouts] = useState<GridItem[]>([]);
-  const [generatedImages, setGeneratedImages] = useState<
-    Record<string, string>
-  >({});
 
   useEffect(() => {
-    fetch("/api/layouts")
-      .then(async (res) => {
-        if (!res.ok) return [];
-        return res.json();
-      })
-      .then((data) => setLayouts(data || []))
-      .catch(() => setLayouts([]));
+    const loadLayouts = async () => {
+      try {
+        const res = await fetch("/api/layouts");
+
+        if (!res.ok) throw new Error("Failed to fetch layouts");
+
+        const data: LayoutFromDB[] = await res.json();
+
+        const uniqueCounts = Array.from(new Set(data.map((l) => l.count))).sort(
+          (a, b) => a - b,
+        );
+
+        const formatted: GridItem[] = uniqueCounts.map((count, i) => ({
+          _id: String(i),
+          title: `${count} Grid Layout`,
+          count,
+        }));
+
+        setLayouts(formatted);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    loadLayouts();
   }, []);
 
   return (
@@ -49,33 +63,12 @@ export default function GridCardsSection() {
         </h2>
       </div>
 
-      <div className="fixed top-0 left-0 opacity-0 pointer-events-none -z-50">
-        {layouts.map((layout) => (
-          <PhotoGrid
-            key={layout._id}
-            count={layout.count}
-            onImageGenerated={(img: string) =>
-              setGeneratedImages((prev) => {
-                if (prev[layout._id]) return prev;
-
-                return {
-                  ...prev,
-                  [layout._id]: img,
-                };
-              })
-            }
-          />
-        ))}
-      </div>
-
       <div className="max-w-7xl mx-auto px-6 pb-16">
         <div className="grid gap-10 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 rounded-xl p-6 shadow-lg bg-blue-50">
           {layouts.map((layout) => (
             <GridCard
               key={layout._id}
               title={layout.title}
-              price={layout.price}
-              image={generatedImages[layout._id] ?? ""}
               count={layout.count}
             />
           ))}
