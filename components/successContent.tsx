@@ -27,24 +27,20 @@ export default function SuccessContent() {
   const handleDownload = async () => {
     if (!img) return;
 
-    try {
-      const response = await fetch(img);
-      const blob = await response.blob();
+    const response = await fetch(img);
+    const blob = await response.blob();
 
-      const url = window.URL.createObjectURL(blob);
+    const url = window.URL.createObjectURL(blob);
 
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = "photobooth.gif";
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "photobooth.gif";
 
-      document.body.appendChild(link);
-      link.click();
+    document.body.appendChild(link);
+    link.click();
 
-      link.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error("Download failed", err);
-    }
+    link.remove();
+    window.URL.revokeObjectURL(url);
   };
 
   const handleShare = async () => {
@@ -67,28 +63,27 @@ export default function SuccessContent() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-r from-purple-500 via-pink-400 to-purple-600 text-white p-8">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-r from-purple-500 via-pink-400 to-purple-600 text-white px-6 py-12">
       {/* TITLE */}
-      <h1 className="text-3xl font-bold text-center mb-2">
+      <h1 className="text-4xl font-bold mb-3 text-center">
         🎉 Payment Successful
       </h1>
 
-      <p className="text-white/80 mb-10 text-center">
+      <p className="text-white/80 mb-12 text-center">
         Your photobooth GIF is ready!
       </p>
 
-      {/* GIF + QR SECTION */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center max-w-5xl w-full">
+      {/* CONTENT */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center w-full max-w-6xl">
         {/* GIF PREVIEW */}
         {img && (
-          <div className="flex justify-center w-full">
-            <div className="bg-white/20 backdrop-blur-lg rounded-3xl p-4 shadow-xl w-[220px] sm:w-[260px] md:w-[300px]">
-              <div className="rounded-2xl overflow-hidden">
+          <div className="flex justify-center">
+            <div className="bg-white/20 backdrop-blur-lg rounded-[32px] p-6 shadow-2xl w-full max-w-[900px]">
+              <div className="rounded-[28px] overflow-hidden">
                 <img
                   src={img}
-                  alt="GIF Preview"
-                  className="w-full h-auto object-contain"
-                  style={{ clipPath: "inset(0 round 24px)" }}
+                  alt="Photobooth GIF"
+                  className="w-full h-auto object-cover"
                 />
               </div>
             </div>
@@ -97,41 +92,39 @@ export default function SuccessContent() {
 
         {/* QR CODE */}
         {qr && (
-          <div className="flex flex-col items-center gap-4">
-            <p className="text-white/80 text-sm text-center">
-              Scan to download
-            </p>
+          <div className="flex flex-col items-center gap-6">
+            <p className="text-white/80 text-sm">Scan to download</p>
 
             <img
               src={qr}
               alt="QR Code"
-              className="w-48 md:w-56 bg-white p-4 rounded-xl shadow-lg"
+              className="w-56 bg-white p-4 rounded-2xl shadow-xl"
             />
           </div>
         )}
       </div>
 
       {/* ACTION BUTTONS */}
-      <div className="flex flex-wrap justify-center gap-4 mt-10">
+      <div className="flex flex-wrap justify-center gap-6 mt-12">
         <button
           onClick={handleDownload}
-          className="px-6 py-3 rounded-xl bg-white text-purple-600 font-semibold shadow hover:scale-105 transition"
+          className="px-8 py-3 rounded-xl bg-white text-purple-600 font-semibold shadow-lg hover:scale-105 transition"
         >
           Download
         </button>
 
         <button
           onClick={handleShare}
-          className="px-6 py-3 rounded-xl bg-white/80 text-purple-700 font-semibold shadow hover:scale-105 transition"
+          className="px-8 py-3 rounded-xl bg-white/80 text-purple-700 font-semibold shadow-lg hover:scale-105 transition"
         >
           Share
         </button>
       </div>
 
-      {/* BACK BUTTON */}
+      {/* BACK */}
       <button
         onClick={() => router.push("/")}
-        className="mt-10 px-8 py-3 bg-white text-purple-600 font-semibold rounded-xl shadow hover:scale-105 transition"
+        className="mt-12 px-10 py-3 bg-white text-purple-600 font-semibold rounded-xl shadow-lg hover:scale-105 transition"
       >
         Back to Home
       </button>

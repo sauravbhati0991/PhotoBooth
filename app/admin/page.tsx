@@ -138,27 +138,25 @@ export default function GridCardsSectionAdmin() {
   };
 
   const layouts = count ? getLayouts(count) : [];
-
   const basicInfoFilled = layoutName && count && price;
 
   return (
-    <>
+    <div className="min-h-screen bg-gradient-to-r from-purple-500 via-pink-400 to-purple-600 text-white">
+      {/* NAVBAR */}
       <nav className="max-w-7xl mx-auto flex items-center justify-between p-6">
-        <Link href="/" className="text-2xl font-bold text-blue-500">
+        <Link href="/" className="text-2xl font-bold">
           PhotoBooth
         </Link>
       </nav>
 
       <div className="max-w-6xl mx-auto px-6 pb-20">
-        <h1 className="text-3xl font-bold text-blue-500 text-center mb-10">
-          Layout Builder
-        </h1>
+        <h1 className="text-3xl font-bold text-center mb-10">Layout Builder</h1>
 
         {!showBuilder && (
           <div className="flex justify-center">
             <button
               onClick={() => setShowBuilder(true)}
-              className="bg-blue-400 hover:shadow-lg hover:bg-blue-500 cursor-pointer text-white px-6 py-3 rounded-xl"
+              className="bg-white text-purple-600 hover:scale-105 cursor-pointer px-6 py-3 rounded-xl shadow-lg transition"
             >
               Add Layout
             </button>
@@ -167,10 +165,9 @@ export default function GridCardsSectionAdmin() {
 
         {showBuilder && (
           <div className="space-y-10">
-            <div className="bg-blue-50 p-6 rounded-xl shadow">
-              <h2 className="font-semibold mb-6 text-blue-400 text-center">
-                Layout Details
-              </h2>
+            {/* LAYOUT DETAILS */}
+            <div className="bg-white/20 backdrop-blur-lg p-6 rounded-xl shadow-xl">
+              <h2 className="font-semibold mb-6 text-center">Layout Details</h2>
 
               <div className="grid md:grid-cols-3 gap-6">
                 <div className="flex flex-col items-center">
@@ -179,7 +176,7 @@ export default function GridCardsSectionAdmin() {
                     type="text"
                     value={layoutName}
                     onChange={(e) => setLayoutName(e.target.value)}
-                    className="border rounded p-2 w-full text-center"
+                    className="border border-white/40 bg-white/30 text-white placeholder-white/70 rounded p-2 w-full text-center"
                     placeholder="ex: Wedding Layout"
                   />
                 </div>
@@ -207,7 +204,7 @@ export default function GridCardsSectionAdmin() {
                         setSelectedLayout(null);
                       }
                     }}
-                    className="border rounded p-2 w-full text-center"
+                    className="border border-white/40 bg-white/30 text-white rounded p-2 w-full text-center"
                     placeholder="ex: 4"
                   />
                 </div>
@@ -228,7 +225,7 @@ export default function GridCardsSectionAdmin() {
 
                       setPrice(Number(value));
                     }}
-                    className="border rounded p-2 w-full text-center"
+                    className="border border-white/40 bg-white/30 text-white rounded p-2 w-full text-center"
                     placeholder="ex: 100"
                   />
                 </div>
@@ -236,7 +233,7 @@ export default function GridCardsSectionAdmin() {
             </div>
 
             {basicInfoFilled && (
-              <div className="bg-blue-50 p-6 rounded-xl shadow">
+              <div className="bg-white/20 backdrop-blur-lg p-6 rounded-xl shadow-xl">
                 <h2 className="font-semibold mb-6 text-center">
                   Select Grid Layout
                 </h2>
@@ -249,8 +246,8 @@ export default function GridCardsSectionAdmin() {
                       className={`border rounded-lg cursor-pointer px-5 py-3 text-nowrap transition ${
                         selectedLayout?.rows === layout.rows &&
                         selectedLayout?.cols === layout.cols
-                          ? "border-blue-500 bg-blue-100"
-                          : "hover:border-blue-400"
+                          ? "border-white bg-white/30"
+                          : "border-white/40 hover:bg-white/20"
                       }`}
                     >
                       {layout.rows} × {layout.cols}
@@ -262,10 +259,9 @@ export default function GridCardsSectionAdmin() {
 
             {selectedLayout && (
               <div className="grid md:grid-cols-2 gap-8 items-start">
-                <div className="bg-blue-50 p-6 rounded-xl shadow">
-                  <h2 className="font-semibold mb-6 text-blue-500">
-                    Background
-                  </h2>
+                {/* BACKGROUND */}
+                <div className="bg-white/20 backdrop-blur-lg p-6 rounded-xl shadow-xl">
+                  <h2 className="font-semibold mb-6">Background</h2>
 
                   <div className="flex gap-6 mb-6">
                     <label className="flex items-center gap-2">
@@ -299,7 +295,7 @@ export default function GridCardsSectionAdmin() {
                     <>
                       <label
                         htmlFor="imageUpload"
-                        className="cursor-pointer bg-blue-400 hover:bg-blue-500 text-white px-4 py-2 rounded-lg"
+                        className="cursor-pointer bg-white text-purple-600 px-4 py-2 rounded-lg shadow"
                       >
                         Upload Background Image
                       </label>
@@ -324,10 +320,9 @@ export default function GridCardsSectionAdmin() {
                   )}
                 </div>
 
-                <div className="bg-blue-50 p-6 rounded-xl shadow h-fit flex flex-col items-center">
-                  <h2 className="font-semibold mb-6 text-blue-500">
-                    Layout Preview
-                  </h2>
+                {/* PREVIEW */}
+                <div className="bg-white/20 backdrop-blur-lg p-6 rounded-xl shadow-xl h-fit flex flex-col items-center">
+                  <h2 className="font-semibold mb-6">Layout Preview</h2>
 
                   <div
                     className="border-4 border-white rounded-2xl shadow-xl p-4 w-full max-w-md mx-auto"
@@ -367,10 +362,10 @@ export default function GridCardsSectionAdmin() {
                 <button
                   onClick={handleSaveLayout}
                   disabled={saving}
-                  className={`px-8 py-3 rounded-xl text-white ${
+                  className={`px-8 py-3 rounded-xl font-semibold ${
                     saving
                       ? "bg-gray-400 cursor-not-allowed"
-                      : "bg-blue-400 hover:bg-blue-500 shadow-lg cursor-pointer"
+                      : "bg-white text-purple-600 hover:scale-105 shadow-lg cursor-pointer"
                   }`}
                 >
                   {saving ? "Uploading..." : "Upload Layout"}
@@ -380,6 +375,6 @@ export default function GridCardsSectionAdmin() {
           </div>
         )}
       </div>
-    </>
+    </div>
   );
 }

@@ -22,6 +22,18 @@ export default function EditLayoutContent() {
 
   const webcamRef = useRef<Webcam>(null);
 
+  const CELL_SIZE = 120;
+  const GAP = 8;
+  const PREVIEW_PADDING = 24;
+
+  const previewWidth =
+    cols * CELL_SIZE + (cols - 1) * GAP + PREVIEW_PADDING * 2;
+
+  const previewHeight =
+    rows * CELL_SIZE + (rows - 1) * GAP + PREVIEW_PADDING * 2;
+
+  const isWidePreview = previewWidth > 420;
+
   const [framesList, setFramesList] = useState<string[][]>(
     Array.from({ length: count }, () => []),
   );
@@ -51,22 +63,6 @@ export default function EditLayoutContent() {
 
   const allFilled = useMemo(() => images.every((img) => img !== ""), [images]);
 
-  const handleDelete = (index: number) => {
-    setImages((prev) => {
-      const updated = [...prev];
-      updated[index] = "";
-      return updated;
-    });
-
-    setFramesList((prev) => {
-      const updated = [...prev];
-      updated[index] = [];
-      return updated;
-    });
-
-    setSelectedCell(index);
-  };
-
   const handleCapture = useCallback(async () => {
     if (!webcamRef.current || selectedCell === null) return;
 
@@ -79,7 +75,6 @@ export default function EditLayoutContent() {
 
     for (let i = 0; i < 6; i++) {
       const canvas = document.createElement("canvas");
-
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
 
@@ -90,7 +85,6 @@ export default function EditLayoutContent() {
       ctx.drawImage(video, 0, 0);
 
       frames.push(canvas.toDataURL("image/jpeg"));
-
       await delay(250);
     }
 
@@ -131,18 +125,17 @@ export default function EditLayoutContent() {
 
     try {
       const FRAME_COUNT = 6;
-      const CELL_SIZE = 260;
+      const CELL = 260;
       const GAP = 20;
       const PADDING = 40;
 
-      const layoutFrames: string[] = [];
+      const canvasWidth = cols * CELL + GAP * (cols - 1) + PADDING * 2;
+      const canvasHeight = rows * CELL + GAP * (rows - 1) + PADDING * 2;
 
-      const canvasWidth = cols * CELL_SIZE + GAP * (cols - 1) + PADDING * 2;
-      const canvasHeight = rows * CELL_SIZE + GAP * (rows - 1) + PADDING * 2;
+      const layoutFrames: string[] = [];
 
       for (let f = 0; f < FRAME_COUNT; f++) {
         const canvas = document.createElement("canvas");
-
         canvas.width = canvasWidth;
         canvas.height = canvasHeight;
 
@@ -153,8 +146,7 @@ export default function EditLayoutContent() {
           const bg = new Image();
           bg.crossOrigin = "anonymous";
           bg.src = bgValue;
-
-          await new Promise((res) => (bg.onload = res));
+          await new Promise((r) => (bg.onload = r));
           ctx.drawImage(bg, 0, 0, canvasWidth, canvasHeight);
         } else {
           ctx.fillStyle = bgValue;
@@ -167,41 +159,15 @@ export default function EditLayoutContent() {
 
           const img = new Image();
           img.src = frame;
-
-          await new Promise((res) => (img.onload = res));
+          await new Promise((r) => (img.onload = r));
 
           const row = Math.floor(i / cols);
           const col = i % cols;
 
-          const x = PADDING + col * (CELL_SIZE + GAP);
-          const y = PADDING + row * (CELL_SIZE + GAP);
+          const x = PADDING + col * (CELL + GAP);
+          const y = PADDING + row * (CELL + GAP);
 
-          const radius = 24;
-
-          ctx.save();
-
-          ctx.beginPath();
-          ctx.moveTo(x + radius, y);
-          ctx.lineTo(x + CELL_SIZE - radius, y);
-          ctx.quadraticCurveTo(x + CELL_SIZE, y, x + CELL_SIZE, y + radius);
-          ctx.lineTo(x + CELL_SIZE, y + CELL_SIZE - radius);
-          ctx.quadraticCurveTo(
-            x + CELL_SIZE,
-            y + CELL_SIZE,
-            x + CELL_SIZE - radius,
-            y + CELL_SIZE,
-          );
-          ctx.lineTo(x + radius, y + CELL_SIZE);
-          ctx.quadraticCurveTo(x, y + CELL_SIZE, x, y + CELL_SIZE - radius);
-          ctx.lineTo(x, y + radius);
-          ctx.quadraticCurveTo(x, y, x + radius, y);
-          ctx.closePath();
-
-          ctx.clip();
-
-          ctx.drawImage(img, x, y, CELL_SIZE, CELL_SIZE);
-
-          ctx.restore();
+          ctx.drawImage(img, x, y, CELL, CELL);
         }
 
         layoutFrames.push(canvas.toDataURL("image/jpeg"));
@@ -213,8 +179,6 @@ export default function EditLayoutContent() {
           interval: 0.25,
           gifWidth: canvasWidth,
           gifHeight: canvasHeight,
-          numWorkers: 4,
-          quality: 5,
         },
         async (obj: GifResult) => {
           if (!obj.error) {
@@ -243,48 +207,84 @@ export default function EditLayoutContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-r from-purple-500 via-pink-400 to-purple-600 text-white flex flex-col items-center justify-center p-10">
-      <nav className="absolute top-0 w-full max-w-7xl flex items-center justify-between p-6">
-        <Link href="/" className="text-2xl font-bold text-white">
-          PhotoBooth
-        </Link>
+    <div className="min-h-screen bg-gradient-to-r from-purple-500 via-pink-400 to-purple-600 text-white flex flex-col items-center p-10">
+      {" "}
+      <nav className="absolute top-0 w-full max-w-7xl flex justify-between p-6">
+        {" "}
+        <Link href="/" className="text-2xl font-bold">
+          PhotoBooth{" "}
+        </Link>{" "}
       </nav>
-
       <h1 className="text-3xl font-bold mb-12">Photobooth Capture</h1>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-16 max-w-[1400px] w-full items-center">
-        <div className="bg-white/20 backdrop-blur-lg rounded-3xl p-10 shadow-xl flex flex-col items-center">
+      <div
+        className={`grid gap-10 w-full max-w-[1400px]
+    ${
+      isWidePreview
+        ? "grid-cols-1 lg:grid-cols-2"
+        : "grid-cols-1 lg:grid-cols-3"
+    }`}
+      >
+        {/* PREVIEW */}
+        <div
+          className={`bg-white/20 backdrop-blur-lg p-10 rounded-2xl flex flex-col items-center
+      ${isWidePreview ? "lg:col-span-2" : ""}`}
+        >
           <p className="mb-6 text-white/80">Template Preview</p>
 
-          <div
-            className="grid gap-4 p-4 rounded-xl"
-            style={{
-              background:
-                bgType === "image" ? `url(${bgValue}) center/cover` : bgValue,
-              gridTemplateColumns: `repeat(${cols},1fr)`,
-            }}
-          >
-            {images.map((img, i) => (
+          <div className="w-full scrollbar-hide overflow-x-auto">
+            <div className="min-w-max flex justify-center">
               <div
-                key={i}
-                onClick={() => setSelectedCell(i)}
-                className={`relative w-24 h-24 bg-white rounded-lg overflow-hidden group cursor-pointer ${
-                  selectedCell === i ? "ring-4 ring-purple-400" : ""
-                }`}
+                className="rounded-xl flex items-center justify-center"
+                style={{
+                  width: previewWidth,
+                  height: previewHeight,
+                  background:
+                    bgType === "image"
+                      ? `url(${bgValue}) center/cover`
+                      : bgValue,
+                  padding: PREVIEW_PADDING,
+                }}
               >
-                {img ? (
-                  <img src={img} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="flex items-center justify-center h-full text-gray-400">
-                    +
-                  </div>
-                )}
+                <div
+                  className="grid"
+                  style={{
+                    gridTemplateColumns: `repeat(${cols}, ${CELL_SIZE}px)`,
+                    gridTemplateRows: `repeat(${rows}, ${CELL_SIZE}px)`,
+                    gap: GAP,
+                  }}
+                >
+                  {images.map((img, i) => (
+                    <div
+                      key={i}
+                      onClick={() => setSelectedCell(i)}
+                      className={`relative bg-white rounded-xl overflow-hidden cursor-pointer
+            ${
+              selectedCell === i
+                ? "ring-4 ring-purple-500 ring-offset-2 ring-offset-white"
+                : "hover:ring-2 hover:ring-white/60"
+            }`}
+                      style={{
+                        width: CELL_SIZE,
+                        height: CELL_SIZE,
+                      }}
+                    >
+                      {img ? (
+                        <img src={img} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="flex items-center justify-center h-full text-gray-400 text-lg font-bold">
+                          +
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
-            ))}
+            </div>
           </div>
         </div>
 
-        <div className="flex flex-col items-center gap-8">
+        {/* CAMERA */}
+        <div className="flex flex-col items-center gap-6">
           <Webcam
             ref={webcamRef}
             screenshotFormat="image/jpeg"
@@ -296,23 +296,22 @@ export default function EditLayoutContent() {
           <button
             onClick={handleCapture}
             disabled={capturing || selectedCell === null}
-            className="px-10 py-4 text-lg rounded-xl bg-white text-purple-600 font-semibold hover:scale-105 transition shadow-lg disabled:opacity-50"
+            className="px-10 py-4 bg-white text-purple-600 rounded-xl font-semibold"
           >
             {capturing ? "Capturing..." : "Capture"}
           </button>
         </div>
 
-        <div className="bg-white/20 backdrop-blur-lg rounded-3xl p-10 shadow-xl flex flex-col gap-4">
+        {/* FILTERS */}
+        <div className="bg-white/20 backdrop-blur-lg rounded-2xl p-10 flex flex-col gap-4">
           <p className="text-white/80 mb-2">Filters</p>
 
           {filters.map((f) => (
             <button
               key={f.value}
               onClick={() => setFilter(f.value)}
-              className={`px-6 py-3 text-lg rounded-xl ${
-                filter === f.value
-                  ? "bg-white text-purple-600"
-                  : "bg-white/30 hover:bg-white/50"
+              className={`px-4 py-2 rounded-lg ${
+                filter === f.value ? "bg-white text-purple-600" : "bg-white/30"
               }`}
             >
               {f.name}
@@ -320,17 +319,13 @@ export default function EditLayoutContent() {
           ))}
         </div>
       </div>
-
       {allFilled && (
-        <div className="mt-12">
-          <button
-            onClick={generateLayoutGif}
-            disabled={saving}
-            className="px-12 py-4 text-lg rounded-xl bg-white text-purple-600 font-semibold hover:scale-105 transition shadow-lg"
-          >
-            {saving ? "Saving..." : "Save Layout"}
-          </button>
-        </div>
+        <button
+          onClick={generateLayoutGif}
+          className="mt-12 px-12 py-4 bg-white text-purple-600 rounded-xl font-semibold"
+        >
+          Save Layout
+        </button>
       )}
     </div>
   );
