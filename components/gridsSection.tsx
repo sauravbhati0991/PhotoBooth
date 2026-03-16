@@ -1,79 +1,160 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import GridCard from "./gridCard";
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
-interface LayoutFromDB {
+type Template = {
   _id: string;
+  name: string;
+  rows: number;
+  cols: number;
   count: number;
-}
+  price: number;
+  backgroundType: "color" | "image";
+  backgroundValue: string;
+};
 
-interface GridItem {
-  _id: string;
-  title: string;
-  count: number;
-}
+const CELL = 72;
+const GAP = 10;
+const FRAME = 10;
 
 export default function GridCardsSection() {
-  const [layouts, setLayouts] = useState<GridItem[]>([]);
+  const router = useRouter();
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadLayouts = async () => {
+    const fetchTemplates = async () => {
       try {
         const res = await fetch("/api/layouts");
+        if (!res.ok) throw new Error("Failed to fetch templates");
 
-        if (!res.ok) throw new Error("Failed to fetch layouts");
-
-        const data: LayoutFromDB[] = await res.json();
-
-        const uniqueCounts = Array.from(new Set(data.map((l) => l.count))).sort(
-          (a, b) => a - b,
-        );
-
-        const formatted: GridItem[] = uniqueCounts.map((count, i) => ({
-          _id: String(i),
-          title: `${count} Grid Layout`,
-          count,
-        }));
-
-        setLayouts(formatted);
+        const data: Template[] = await res.json();
+        setTemplates(data);
       } catch (err) {
-        console.error(err);
+        console.error("Template fetch error:", err);
+      } finally {
+        setLoading(false);
       }
     };
 
-    loadLayouts();
+    fetchTemplates();
   }, []);
 
+  const scroll = (direction: "left" | "right") => {
+    if (!scrollRef.current) return;
+
+    scrollRef.current.scrollBy({
+      left: direction === "left" ? -350 : 350,
+      behavior: "smooth",
+    });
+  };
+
+  const openTemplate = (t: Template) => {
+    router.push(
+      `/editLayout?title=${encodeURIComponent(t.name)}&price=${t.price}&count=${t.count}&rows=${t.rows}&cols=${t.cols}&bgType=${t.backgroundType}&bgValue=${encodeURIComponent(t.backgroundValue)}`,
+    );
+  };
+
   return (
-    <>
-      <nav className="max-w-7xl mx-auto flex items-center justify-between p-6">
-        <Link
-          href="/"
-          className="text-2xl font-bold text-blue-400 hover:underline"
-        >
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-r from-purple-500 via-pink-400 to-purple-600 px-4">
+      {/* Header */}
+      <nav className="absolute top-0 w-full max-w-7xl flex items-center justify-between p-6">
+        <Link href="/" className="text-2xl font-bold text-white">
           PhotoBooth
         </Link>
       </nav>
 
-      <div className="max-w-7xl mx-auto px-6">
-        <h2 className="text-3xl md:text-4xl font-bold text-center mb-10 text-blue-400">
-          Choose Your Photo Grid Layout
-        </h2>
-      </div>
+      {/* Title */}
+      <h2 className="text-2xl md:text-3xl font-semibold text-white mb-12 text-center">
+        Choose Your Template
+      </h2>
 
-      <div className="max-w-7xl mx-auto px-6 pb-16">
-        <div className="grid gap-10 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 rounded-xl p-6 shadow-lg bg-blue-50">
-          {layouts.map((layout) => (
-            <GridCard
-              key={layout._id}
-              title={layout.title}
-              count={layout.count}
-            />
-          ))}
-        </div>
+      <div className="flex items-center gap-4 w-full max-w-6xl">
+        {/* Left Arrow */}
+        <button
+          onClick={() => scroll("left")}
+          className="p-3 rounded-full bg-white/80 backdrop-blur-md shadow-lg hover:scale-110 transition"
+        >
+          <ChevronLeft size={26} />
+        </button>
+
+        {loading ? (
+          <p className="text-white">Loading templates...</p>
+        ) : (
+          <div
+            ref={scrollRef}
+            className="flex gap-10 items-center scrollbar-hide p-8 overflow-x-auto scroll-smooth w-full"
+          >
+            {templates.map((t) => {
+              const gridWidth = t.cols * CELL + (t.cols - 1) * GAP;
+              const gridHeight = t.rows * CELL + (t.rows - 1) * GAP;
+
+              return (
+                <div
+                  key={t._id}
+                  onClick={() => openTemplate(t)}
+                  className="flex flex-col items-center cursor-pointer hover:scale-110 transition"
+                  style={{ width: gridWidth + FRAME * 2 }}
+                >
+                  {/* Template Preview */}
+                  <div
+                    className="rounded-2xl shadow-lg flex items-center justify-center"
+                    style={{
+                      backgroundColor:
+                        t.backgroundType === "color"
+                          ? t.backgroundValue
+                          : undefined,
+                      backgroundImage:
+                        t.backgroundType === "image"
+                          ? `url(${t.backgroundValue})`
+                          : undefined,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                      padding: FRAME,
+                      width: gridWidth + FRAME * 2,
+                      height: gridHeight + FRAME * 2,
+                    }}
+                  >
+                    <div
+                      className="grid"
+                      style={{
+                        gridTemplateColumns: `repeat(${t.cols}, ${CELL}px)`,
+                        gridTemplateRows: `repeat(${t.rows}, ${CELL}px)`,
+                        gap: GAP,
+                      }}
+                    >
+                      {Array.from({ length: t.rows * t.cols }).map((_, i) => (
+                        <div key={i} className="bg-white rounded-lg" />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Name */}
+                  <p className="mt-3 text-white font-medium text-center">
+                    {t.name}
+                  </p>
+
+                  {/* Price */}
+                  <p className="text-white/80 text-sm">₹{t.price}</p>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Right Arrow */}
+        <button
+          onClick={() => scroll("right")}
+          className="p-3 rounded-full bg-white/80 backdrop-blur-md shadow-lg hover:scale-110 transition"
+        >
+          <ChevronRight size={26} />
+        </button>
       </div>
-    </>
+    </div>
   );
 }

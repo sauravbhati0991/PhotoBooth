@@ -1,5 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { CreditCard, Tag, ShoppingCart, Lock, ArrowLeft } from "lucide-react";
 import { useState } from "react";
@@ -28,82 +29,39 @@ const PaymentContent = () => {
     );
   };
 
-  // const createOrder = async () => {
-  //   try {
-  //     setLoading(true);
-
-  //     const res = await fetch("/api/createOrder", {
-  //       method: "POST",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //       },
-  //       body: JSON.stringify({ amount }),
-  //     });
-
-  //     const data = await res.json();
-
-  //     const options = {
-  //       key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-  //       amount: data.amount,
-  //       currency: "INR",
-  //       name: "PhotoBooth",
-  //       description: title,
-  //       order_id: data.id,
-
-  //       handler: async () => {
-  //         router.push(
-  //           `/success?img=${encodeURIComponent(img || "")}&title=${encodeURIComponent(title)}&amount=${amount}`
-  //         );
-  //       },
-
-  //       theme: {
-  //         color: "#60a5fa",
-  //       },
-  //     };
-
-  //     const payment = new (window as any).Razorpay(options);
-  //     payment.open();
-
-  //     payment.on("payment.failed", () => {
-  //       setLoading(false);
-  //       alert("Payment Failed");
-  //     });
-  //   } catch (error) {
-  //     console.error(error);
-  //     setLoading(false);
-  //   }
-  // };
-
   return (
     <>
-      <div className="w-full px-12 pt-6 bg-blue-50">
-        <button
-          onClick={() => router.back()}
-          className="flex items-center gap-2 bg-blue-400 text-white px-4 py-2 rounded-xl hover:bg-blue-500 cursor-pointer"
-        >
-          <ArrowLeft size={18} />
-          Back
-        </button>
-      </div>
+      {" "}
+      <div className="min-h-screen bg-gradient-to-r from-purple-500 via-pink-400 to-purple-600 px-6 pb-16 text-white">
+        {/* BACK BUTTON */}
+        <div className="pt-6">
+          <button
+            onClick={() => router.back()}
+            className="flex items-center gap-2 bg-white/20 backdrop-blur-lg text-white px-4 py-2 rounded-xl border border-white/30 hover:bg-white/30 hover:scale-105 transition"
+          >
+            <ArrowLeft size={18} />
+            Back
+          </button>
+        </div>
 
-      <div className="min-h-screen bg-blue-50 px-6 pb-16">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-blue-400">Payment</h1>
-          <p className="text-gray-600 mt-2">
+        {/* PAGE TITLE */}
+        <div className="text-center mb-12 mt-6">
+          <h1 className="text-4xl font-bold">Payment</h1>
+          <p className="text-white/80 mt-2">
             Complete your payment to download your photo layout
           </p>
         </div>
 
+        {/* MAIN CONTENT */}
         <div className="max-w-2xl mx-auto space-y-8">
-          <div className="bg-white rounded-2xl shadow-sm p-6 border border-blue-100">
+          {/* ORDER SUMMARY */}
+          <div className="bg-white/20 backdrop-blur-lg rounded-2xl shadow-xl p-6">
             <div className="flex items-center gap-3 mb-6">
-              <ShoppingCart className="text-blue-400" />
-              <h2 className="text-xl font-semibold text-blue-400">
-                Order Summary
-              </h2>
+              <ShoppingCart className="text-white" />
+              <h2 className="text-xl font-semibold">Order Summary</h2>
             </div>
 
-            <div className="space-y-4 text-gray-700">
+            <div className="space-y-4 text-white/90">
               <div className="flex justify-between">
                 <span>Selected Layout</span>
                 <span className="font-medium">{title}</span>
@@ -115,65 +73,65 @@ const PaymentContent = () => {
               </div>
             </div>
 
-            <div className="border-t mt-6 pt-6 flex justify-between text-lg font-semibold text-blue-500">
+            <div className="border-t border-white/30 mt-6 pt-6 flex justify-between text-lg font-semibold">
               <span>Total</span>
               <span>₹{amount}</span>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm p-6 border border-blue-100">
+          {/* PROMO CODE */}
+          <div className="bg-white/20 backdrop-blur-lg rounded-2xl shadow-xl p-6">
             <div className="flex items-center gap-3 mb-6">
-              <Tag className="text-blue-400" />
-              <h2 className="text-xl font-semibold text-blue-400">
-                Promo Code
-              </h2>
+              <Tag className="text-white" />
+              <h2 className="text-xl font-semibold">Promo Code</h2>
             </div>
 
             <div className="flex gap-4">
               <input
                 type="text"
                 placeholder="Enter promo code"
-                className="flex-1 px-4 py-3 rounded-xl border border-blue-300"
+                className="flex-1 px-4 py-3 rounded-xl border border-white/40 bg-white/30 text-white placeholder-white/70 outline-none"
               />
 
-              <button className="px-6 py-3 rounded-xl bg-blue-400 text-white font-semibold cursor-pointer">
+              <button className="px-6 py-3 rounded-xl bg-white text-purple-600 font-semibold shadow hover:scale-105 transition">
                 Apply
               </button>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm p-6 border border-blue-100">
+          {/* PAYMENT METHOD */}
+          <div className="bg-white/20 backdrop-blur-lg rounded-2xl shadow-xl p-6">
             <div className="flex items-center gap-3 mb-6">
-              <CreditCard className="text-blue-400" />
-              <h2 className="text-xl font-semibold text-blue-400">
-                Payment Method
-              </h2>
+              <CreditCard className="text-white" />
+              <h2 className="text-xl font-semibold">Payment Method</h2>
             </div>
 
-            <div className="border-2 border-blue-400 rounded-xl p-5 flex justify-between items-center">
+            <div className="border-2 border-white/40 rounded-xl p-5 flex justify-between items-center">
               <div>
-                <p className="font-semibold text-gray-800">Online Payment</p>
-                <p className="text-gray-500 text-sm">
+                <p className="font-semibold">Online Payment</p>
+                <p className="text-white/70 text-sm">
                   Pay securely via Razorpay
                 </p>
               </div>
 
-              <div className="w-6 h-6 rounded-full bg-blue-400 flex items-center justify-center text-white text-sm">
+              <div className="w-6 h-6 rounded-full bg-white text-purple-600 flex items-center justify-center text-sm">
                 ✓
               </div>
             </div>
           </div>
 
+          {/* PAYMENT BUTTON */}
           <button
             onClick={createOrder}
             disabled={loading}
-            className="w-full py-4 rounded-2xl bg-blue-400 text-white text-lg font-semibold flex items-center justify-center gap-2 hover:bg-blue-500 cursor-pointer shadow-lg"
+            className="w-full py-4 rounded-2xl bg-white text-purple-600 text-lg font-semibold flex items-center justify-center gap-2 hover:scale-105 transition shadow-xl"
           >
             <Lock size={18} />
             {loading ? "Processing Payment..." : "Proceed to Payment"}
           </button>
         </div>
 
+        {/* RAZORPAY SCRIPT */}
         <Script
           src="https://checkout.razorpay.com/v1/checkout.js"
           strategy="lazyOnload"
