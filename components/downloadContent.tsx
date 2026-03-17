@@ -91,19 +91,16 @@ export default function SuccessContent() {
   return (
     <div className="min-h-screen flex flex-col items-center bg-gradient-to-r from-purple-500 via-pink-400 to-purple-600 text-white px-4 py-8">
       <nav className="w-full max-w-6xl flex justify-between items-center mb-6">
-        <Link href="/" className="text-xl sm:text-2xl font-bold">
+        <Link href="/" className="text-xl sm:text-2xl font-bold cursor-pointer">
           PhotoBooth
         </Link>
       </nav>
-      {/* PREVIEWS */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full max-w-6xl">
-        {/* GIF PREVIEW */}
         {gif && (
           <div className="flex flex-col items-center gap-4">
             <p className="text-white/80">GIF Preview</p>
 
             <div className="bg-white/20 backdrop-blur-lg rounded-2xl p-4 flex justify-center items-center">
-              {/* 🔥 FIXED CONTAINER WITH ROUND CLIP */}
               <div
                 style={{ width: 300, height: 450 }}
                 className="flex justify-center items-center overflow-hidden rounded-2xl"
@@ -117,20 +114,18 @@ export default function SuccessContent() {
 
             <button
               onClick={() => handleDownload(gif, "photobooth.gif")}
-              className="px-6 py-2 bg-white text-purple-600 rounded-lg font-semibold"
+              className="px-6 py-2 bg-white text-purple-600 rounded-lg font-semibold cursor-pointer"
             >
               Download GIF
             </button>
           </div>
         )}
 
-        {/* IMAGE PREVIEW */}
         {img && (
           <div className="flex flex-col items-center gap-4">
             <p className="text-white/80">Image Preview</p>
 
             <div className="bg-white/20 backdrop-blur-lg rounded-2xl p-4 flex justify-center items-center">
-              {/* 🔥 SAME FIX */}
               <div
                 style={{ width: 300, height: 450 }}
                 className="flex justify-center items-center overflow-hidden"
@@ -145,14 +140,14 @@ export default function SuccessContent() {
             <div className="flex gap-3 flex-wrap justify-center">
               <button
                 onClick={() => handleDownload(img, "photobooth.jpg")}
-                className="px-6 py-2 bg-white text-purple-600 rounded-lg font-semibold"
+                className="px-6 py-2 bg-white text-purple-600 rounded-lg font-semibold cursor-pointer"
               >
                 Download Image
               </button>
 
               <button
                 onClick={handlePrint}
-                className="px-6 py-2 bg-white/80 text-purple-700 rounded-lg font-semibold"
+                className="px-6 py-2 bg-white/80 text-purple-700 rounded-lg font-semibold cursor-pointer"
               >
                 Print
               </button>

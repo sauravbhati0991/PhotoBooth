@@ -33,7 +33,6 @@ export default function EditLayoutPage() {
   const [bgColor, setBgColor] = useState("#93c5fd");
   const [bgImage, setBgImage] = useState<string | null>(null);
 
-  // 🔥 Fetch layout by ID
   useEffect(() => {
     const fetchLayout = async () => {
       try {
@@ -43,7 +42,6 @@ export default function EditLayoutPage() {
         const data: Layout = await res.json();
         setLayout(data);
 
-        // pre-fill
         setName(data.name);
         setPrice(data.price);
         setBgType(data.backgroundType);
@@ -82,7 +80,7 @@ export default function EditLayoutPage() {
 
       alert("Layout deleted successfully");
 
-      router.push("/admin"); // or wherever your list page is
+      router.push("/admin");
     } catch (err) {
       console.error(err);
       alert("Failed to delete layout");
@@ -152,7 +150,6 @@ export default function EditLayoutPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-r from-purple-500 via-pink-400 to-purple-600 text-white px-6">
-      {/* Back */}
       <div className="pt-6">
         <button
           onClick={() => router.back()}
@@ -164,9 +161,7 @@ export default function EditLayoutPage() {
 
       <h1 className="text-3xl font-bold text-center">Edit Layout</h1>
       <div className="max-w-6xl mx-auto mt-10 grid md:grid-cols-2 gap-10 items-start">
-        {/* FORM */}
         <div className="bg-white/20 backdrop-blur-lg p-6 rounded-xl shadow-xl space-y-6">
-          {/* Name */}
           <div>
             <label className="block mb-2">Layout Name</label>
             <input
@@ -176,7 +171,6 @@ export default function EditLayoutPage() {
             />
           </div>
 
-          {/* Price */}
           <div>
             <label className="block mb-2">Price</label>
             <input
@@ -187,7 +181,6 @@ export default function EditLayoutPage() {
             />
           </div>
 
-          {/* Background Type */}
           <div className="flex gap-6">
             <label>
               <input
@@ -208,12 +201,10 @@ export default function EditLayoutPage() {
             </label>
           </div>
 
-          {/* Color Picker */}
           {bgType === "color" && (
             <HexColorPicker color={bgColor} onChange={setBgColor} />
           )}
 
-          {/* Image Upload */}
           {bgType === "image" && (
             <>
               <label className="cursor-pointer bg-white text-purple-600 px-4 py-2 rounded-lg shadow">
@@ -245,7 +236,6 @@ export default function EditLayoutPage() {
         </div>
 
         <div className="w-full">
-          {/* 🔥 PREVIEW */}
           <div className="bg-white/20 backdrop-blur-lg p-6 rounded-xl shadow-xl flex flex-col items-center">
             <h2 className="font-semibold mb-6">Live Preview</h2>
 
@@ -277,22 +267,20 @@ export default function EditLayoutPage() {
           </div>
         </div>
       </div>
-      {/* SAVE BUTTON */}
       <div className="flex justify-center gap-10 my-10">
         <button
           onClick={handleUpdate}
           disabled={saving}
-          className={`px-8 py-3 rounded-xl font-semibold ${
+          className={`px-8 py-3 cursor-pointer rounded-xl font-semibold ${
             saving ? "bg-gray-400" : "bg-white text-purple-600 hover:scale-105"
           }`}
         >
           {saving ? "Updating..." : "Update Layout"}
         </button>
 
-        {/* 🔥 DELETE BUTTON */}
         <button
           onClick={handleDelete}
-          className="px-8 py-3 rounded-xl font-semibold bg-red-500 text-white hover:scale-105 shadow-lg"
+          className="px-8 py-3 cursor-pointer rounded-xl font-semibold bg-red-500 text-white hover:scale-105 shadow-lg"
         >
           Delete Layout
         </button>

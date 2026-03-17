@@ -140,7 +140,6 @@ export default function NewLayout() {
 
   return (
     <div className="min-h-screen bg-gradient-to-r from-purple-500 via-pink-400 to-purple-600 text-white">
-      {/* NAVBAR */}
       <nav className="max-w-7xl mx-auto flex items-center p-6">
         <button
           onClick={() => router.back()}
@@ -247,7 +246,6 @@ export default function NewLayout() {
 
           {selectedLayout && (
             <div className="grid md:grid-cols-2 gap-8 items-start">
-              {/* BACKGROUND */}
               <div className="bg-white/20 backdrop-blur-lg p-6 rounded-xl shadow-xl">
                 <h2 className="font-semibold mb-6">Background</h2>
 
@@ -308,7 +306,6 @@ export default function NewLayout() {
                 )}
               </div>
 
-              {/* PREVIEW */}
               <div className="bg-white/20 backdrop-blur-lg p-6 rounded-xl shadow-xl h-fit flex flex-col items-center">
                 <h2 className="font-semibold mb-6">Layout Preview</h2>
 
@@ -350,7 +347,7 @@ export default function NewLayout() {
               <button
                 onClick={handleSaveLayout}
                 disabled={saving}
-                className={`px-8 py-3 rounded-xl font-semibold ${
+                className={`px-8 py-3 rounded-xl font-semibold cursor-pointer ${
                   saving
                     ? "bg-gray-400 cursor-not-allowed"
                     : "bg-white text-purple-600 hover:scale-105 shadow-lg cursor-pointer"

@@ -16,9 +16,6 @@ export default function SuccessContent() {
 
   const [qr, setQr] = useState("");
 
-  // ================================
-  // QR
-  // ================================
   const downloadUrl =
     typeof window !== "undefined" &&
     gif &&
@@ -32,9 +29,6 @@ export default function SuccessContent() {
     QRCode.toDataURL(downloadUrl).then(setQr);
   }, [downloadUrl]);
 
-  // ================================
-  // 🔥 FIXED PREVIEW SCALING
-  // ================================
   const CELL = 260;
   const GAP = 20;
   const PADDING = 40;
@@ -50,9 +44,6 @@ export default function SuccessContent() {
     CONTAINER_HEIGHT / layoutHeight,
   );
 
-  // ================================
-  // DOWNLOAD
-  // ================================
   const handleDownload = async (url: string, name: string) => {
     if (!url) return;
 
@@ -68,9 +59,6 @@ export default function SuccessContent() {
     URL.revokeObjectURL(objectUrl);
   };
 
-  // ================================
-  // PRINT
-  // ================================
   const handlePrint = () => {
     if (!img) return;
 
@@ -106,9 +94,6 @@ export default function SuccessContent() {
     setTimeout(() => win.print(), 500);
   };
 
-  // ================================
-  // SHARE
-  // ================================
   const handleShare = async () => {
     if (!gif) return;
 
@@ -125,7 +110,6 @@ export default function SuccessContent() {
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-gradient-to-r from-purple-500 via-pink-400 to-purple-600 text-white px-4 py-8">
-      {/* TITLE */}
       <h1 className="text-2xl sm:text-4xl font-bold mb-3 text-center">
         🎉 Payment Successful
       </h1>
@@ -134,15 +118,12 @@ export default function SuccessContent() {
         Your photobooth is ready!
       </p>
 
-      {/* PREVIEWS */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full max-w-6xl">
-        {/* GIF PREVIEW */}
         {gif && (
           <div className="flex flex-col items-center gap-4">
             <p className="text-white/80">GIF Preview</p>
 
             <div className="bg-white/20 backdrop-blur-lg rounded-2xl p-4 flex justify-center items-center">
-              {/* 🔥 FIXED CONTAINER WITH ROUND CLIP */}
               <div
                 style={{ width: 300, height: 450 }}
                 className="flex justify-center items-center overflow-hidden rounded-2xl"
@@ -156,20 +137,18 @@ export default function SuccessContent() {
 
             <button
               onClick={() => handleDownload(gif, "photobooth.gif")}
-              className="px-6 py-2 bg-white text-purple-600 rounded-lg font-semibold"
+              className="px-6 py-2 bg-white text-purple-600 rounded-lg cursor-pointer font-semibold"
             >
               Download GIF
             </button>
           </div>
         )}
 
-        {/* IMAGE PREVIEW */}
         {img && (
           <div className="flex flex-col items-center gap-4">
             <p className="text-white/80">Image Preview</p>
 
             <div className="bg-white/20 backdrop-blur-lg rounded-2xl p-4 flex justify-center items-center">
-              {/* 🔥 SAME FIX */}
               <div
                 style={{ width: 300, height: 450 }}
                 className="flex justify-center items-center overflow-hidden"
@@ -184,14 +163,14 @@ export default function SuccessContent() {
             <div className="flex gap-3 flex-wrap justify-center">
               <button
                 onClick={() => handleDownload(img, "photobooth.jpg")}
-                className="px-6 py-2 bg-white text-purple-600 rounded-lg font-semibold"
+                className="px-6 cursor-pointer py-2 bg-white text-purple-600 rounded-lg font-semibold"
               >
                 Download Image
               </button>
 
               <button
                 onClick={handlePrint}
-                className="px-6 py-2 bg-white/80 text-purple-700 rounded-lg font-semibold"
+                className="px-6 py-2 cursor-pointer bg-white/80 text-purple-700 rounded-lg font-semibold"
               >
                 Print
               </button>
@@ -200,7 +179,6 @@ export default function SuccessContent() {
         )}
       </div>
 
-      {/* QR */}
       {qr && (
         <div className="flex flex-col items-center gap-4 mt-10">
           <p className="text-white/80 text-sm">Scan to download image</p>
@@ -209,18 +187,17 @@ export default function SuccessContent() {
         </div>
       )}
 
-      {/* ACTIONS */}
       <div className="flex flex-wrap justify-center gap-4 mt-10">
         <button
           onClick={handleShare}
-          className="px-6 py-2 bg-white text-purple-600 rounded-lg font-semibold"
+          className="px-6 py-2 bg-white cursor-pointer text-purple-600 rounded-lg font-semibold"
         >
           Share GIF
         </button>
 
         <button
           onClick={() => router.push("/")}
-          className="px-6 py-2 bg-white/80 text-purple-700 rounded-lg font-semibold"
+          className="px-6 py-2 bg-white/80 cursor-pointer text-purple-700 rounded-lg font-semibold"
         >
           Back to Home
         </button>

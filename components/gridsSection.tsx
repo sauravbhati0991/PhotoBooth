@@ -62,20 +62,17 @@ export default function GridCardsSection() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-r from-purple-500 via-pink-400 to-purple-600 px-4">
-      {/* Header */}
       <nav className="absolute top-0 w-full max-w-7xl flex items-center justify-between p-6">
         <Link href="/" className="text-2xl font-bold text-white">
           PhotoBooth
         </Link>
       </nav>
 
-      {/* Title */}
       <h2 className="text-2xl md:text-3xl font-semibold text-white mb-12 text-center">
         Choose Your Template
       </h2>
 
       <div className="flex items-center gap-4 w-full max-w-6xl">
-        {/* Left Arrow */}
         <button
           onClick={() => scroll("left")}
           className="p-3 rounded-full bg-white/80 backdrop-blur-md shadow-lg hover:scale-110 transition"
@@ -101,7 +98,6 @@ export default function GridCardsSection() {
                   className="flex flex-col items-center cursor-pointer hover:scale-110 transition"
                   style={{ width: gridWidth + FRAME * 2 }}
                 >
-                  {/* Template Preview */}
                   <div
                     className="rounded-2xl shadow-lg flex items-center justify-center"
                     style={{
@@ -134,12 +130,10 @@ export default function GridCardsSection() {
                     </div>
                   </div>
 
-                  {/* Name */}
                   <p className="mt-3 text-white font-medium text-center">
                     {t.name}
                   </p>
 
-                  {/* Price */}
                   <p className="text-white/80 text-sm">₹{t.price}</p>
                 </div>
               );
@@ -147,7 +141,6 @@ export default function GridCardsSection() {
           </div>
         )}
 
-        {/* Right Arrow */}
         <button
           onClick={() => scroll("right")}
           className="p-3 rounded-full bg-white/80 backdrop-blur-md shadow-lg hover:scale-110 transition"

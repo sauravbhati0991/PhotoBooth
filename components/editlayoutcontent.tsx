@@ -22,14 +22,11 @@ export default function EditLayoutContent() {
 
   const webcamRef = useRef<Webcam>(null);
 
-  // Detect vertical layout
   const isVerticalLayout = rows > cols;
 
-  // Responsive sizing
   const GAP = isVerticalLayout ? 6 : 8;
   const PREVIEW_PADDING = isVerticalLayout ? 16 : 24;
 
-  // Auto-fit based on screen height
   const maxHeight =
     typeof window !== "undefined" ? window.innerHeight * 0.6 : 500;
 
@@ -90,7 +87,6 @@ export default function EditLayoutContent() {
     try {
       const frames: string[] = [];
 
-      // 🎯 Capture frames
       for (let i = 0; i < 6; i++) {
         const canvas = document.createElement("canvas");
         canvas.width = video.videoWidth;
@@ -107,25 +103,21 @@ export default function EditLayoutContent() {
         await new Promise((res) => setTimeout(res, 250));
       }
 
-      // 🎯 Get middle frame (for static image)
       const middleIndex = Math.floor(frames.length / 2);
       const middleFrame = frames[middleIndex];
 
-      // ✅ Save frames (for final layout GIF later)
       setFramesList((prev) => {
         const updated = [...prev];
         updated[selectedCell] = frames;
         return updated;
       });
 
-      // ✅ Save STATIC IMAGE (middle frame)
       setStaticImages((prev) => {
         const updated = [...prev];
         updated[selectedCell] = middleFrame;
         return updated;
       });
 
-      // 🎯 Create GIF
       gifshot.createGIF(
         {
           images: frames,
@@ -201,9 +193,6 @@ export default function EditLayoutContent() {
 
       const layoutFrames: string[] = [];
 
-      // ================================
-      // 🎞️ CREATE FINAL GIF
-      // ================================
       for (let f = 0; f < FRAME_COUNT; f++) {
         const canvas = document.createElement("canvas");
         canvas.width = canvasWidth;
@@ -212,7 +201,6 @@ export default function EditLayoutContent() {
         const ctx = canvas.getContext("2d");
         if (!ctx) continue;
 
-        // 🎨 Background
         if (bgType === "image") {
           const bg = new Image();
           bg.crossOrigin = "anonymous";
@@ -224,7 +212,6 @@ export default function EditLayoutContent() {
           ctx.fillRect(0, 0, canvasWidth, canvasHeight);
         }
 
-        // 🧩 Draw each cell frame
         for (let i = 0; i < framesList.length; i++) {
           const frame = framesList[i]?.[f];
           if (!frame) continue;
@@ -245,9 +232,6 @@ export default function EditLayoutContent() {
         layoutFrames.push(canvas.toDataURL("image/jpeg"));
       }
 
-      // ================================
-      // 🖼️ CREATE FINAL IMAGE (MIDDLE FRAME)
-      // ================================
       const imageCanvas = document.createElement("canvas");
       imageCanvas.width = canvasWidth;
       imageCanvas.height = canvasHeight;
@@ -255,7 +239,6 @@ export default function EditLayoutContent() {
       const imageCtx = imageCanvas.getContext("2d");
       if (!imageCtx) return;
 
-      // 🎨 Background
       if (bgType === "image") {
         const bg = new Image();
         bg.crossOrigin = "anonymous";
@@ -267,7 +250,6 @@ export default function EditLayoutContent() {
         imageCtx.fillRect(0, 0, canvasWidth, canvasHeight);
       }
 
-      // 🧩 Use STATIC IMAGES (middle frame)
       for (let i = 0; i < staticImages.length; i++) {
         const frame = staticImages[i];
         if (!frame) continue;
@@ -287,9 +269,6 @@ export default function EditLayoutContent() {
 
       const finalImage = imageCanvas.toDataURL("image/jpeg");
 
-      // ================================
-      // 🚀 CREATE GIF FILE
-      // ================================
       gifshot.createGIF(
         {
           images: layoutFrames,
@@ -304,9 +283,6 @@ export default function EditLayoutContent() {
           }
 
           try {
-            // ================================
-            // ☁️ UPLOAD BOTH
-            // ================================
             const res = await fetch("/api/upload", {
               method: "POST",
               headers: {
@@ -321,9 +297,12 @@ export default function EditLayoutContent() {
             const data = await res.json();
 
             router.push(
-              `/success?gif=${encodeURIComponent(
-                data.gifUrl,
-              )}&img=${encodeURIComponent(data.imageUrl)}`,
+              `/payment?title=${encodeURIComponent(title)}
+  &price=${price}
+  &gif=${encodeURIComponent(data.gifUrl)}
+  &img=${encodeURIComponent(data.imageUrl)}
+  &rows=${rows}
+  &cols=${cols}`,
             );
           } catch (err) {
             console.error("Upload failed", err);
@@ -340,9 +319,8 @@ export default function EditLayoutContent() {
 
   return (
     <div className="min-h-screen bg-gradient-to-r from-purple-500 via-pink-400 to-purple-600 text-white flex flex-col items-center px-4 py-6">
-      {/* HEADER */}
       <nav className="w-full max-w-6xl flex justify-between items-center mb-6">
-        <Link href="/" className="text-xl sm:text-2xl font-bold">
+        <Link href="/" className="text-xl sm:text-2xl font-bold cursor-pointer">
           PhotoBooth
         </Link>
       </nav>
@@ -351,13 +329,11 @@ export default function EditLayoutContent() {
         Photobooth Capture
       </h1>
 
-      {/* MAIN GRID */}
       <div
         className={`grid gap-6 w-full max-w-6xl
       ${isWidePreview ? "grid-cols-1 lg:grid-cols-2" : "grid-cols-1 lg:grid-cols-3"}
     `}
       >
-        {/* PREVIEW */}
         <div
           className={`bg-white/20 backdrop-blur-lg p-6 rounded-2xl flex flex-col items-center
         ${isWidePreview ? "lg:col-span-2" : ""}
@@ -365,7 +341,6 @@ export default function EditLayoutContent() {
         >
           <p className="mb-4 text-white/80">Template Preview</p>
 
-          {/* SCROLL FIX */}
           <div className="w-full overflow-auto max-h-[70vh]">
             <div className="min-w-max flex justify-center items-center">
               <div
@@ -418,7 +393,6 @@ export default function EditLayoutContent() {
           </div>
         </div>
 
-        {/* CAMERA */}
         <div className="flex flex-col items-center gap-4">
           <Webcam
             ref={webcamRef}
@@ -431,23 +405,21 @@ export default function EditLayoutContent() {
           <button
             onClick={handleCapture}
             disabled={capturing || selectedCell === null}
-            className="px-6 py-3 bg-white text-purple-600 rounded-xl font-semibold w-full max-w-[300px]"
+            className="px-6 py-3 bg-white text-purple-600 rounded-xl font-semibold cursor-pointer w-full max-w-[300px]"
           >
             {capturing ? "Capturing..." : "Capture"}
           </button>
         </div>
 
-        {/* FILTERS */}
         <div className="bg-white/20 backdrop-blur-lg rounded-2xl p-6 flex flex-col gap-4 w-full">
           <p className="text-white/80 mb-2">Filters</p>
 
-          {/* GRID FOR MOBILE */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {filters.map((f) => (
               <button
                 key={f.value}
                 onClick={() => setFilter(f.value)}
-                className={`px-3 py-2 text-sm rounded-lg ${
+                className={`px-3 py-2 text-sm cursor-pointer rounded-lg ${
                   filter === f.value
                     ? "bg-white text-purple-600"
                     : "bg-white/30"
@@ -460,13 +432,18 @@ export default function EditLayoutContent() {
         </div>
       </div>
 
-      {/* SAVE BUTTON */}
       {allFilled && (
         <button
           onClick={generateLayoutGif}
-          className="mt-8 px-8 py-3 bg-white text-purple-600 rounded-xl font-semibold w-full max-w-[300px]"
+          disabled={saving}
+          className={`mt-8 px-8 py-3 rounded-xl cursor-pointer font-semibold w-full max-w-[300px]
+    ${
+      saving
+        ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+        : "bg-white text-purple-600 cursor-pointer"
+    }`}
         >
-          Save Layout
+          {saving ? "Saving..." : "Save Layout"}
         </button>
       )}
     </div>

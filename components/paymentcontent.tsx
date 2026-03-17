@@ -14,6 +14,9 @@ const PaymentContent = () => {
   const title = searchParams.get("title") || "Photo Layout";
   const price = Number(searchParams.get("price")) || 0;
   const img = searchParams.get("img");
+  const gif = searchParams.get("gif");
+  const rows = searchParams.get("rows");
+  const cols = searchParams.get("cols");
 
   const [loading, setLoading] = useState(false);
 
@@ -23,9 +26,10 @@ const PaymentContent = () => {
     setLoading(true);
 
     router.push(
-      `/success?img=${encodeURIComponent(img || "")}&title=${encodeURIComponent(
-        title,
-      )}&amount=${amount}`,
+      `/success?gif=${encodeURIComponent(gif || "")}
+  &img=${encodeURIComponent(img || "")}
+  &rows=${rows}
+  &cols=${cols}`,
     );
   };
 
@@ -33,7 +37,6 @@ const PaymentContent = () => {
     <>
       {" "}
       <div className="min-h-screen bg-gradient-to-r from-purple-500 via-pink-400 to-purple-600 px-6 pb-16 text-white">
-        {/* BACK BUTTON */}
         <div className="pt-6">
           <button
             onClick={() => router.back()}
@@ -44,7 +47,6 @@ const PaymentContent = () => {
           </button>
         </div>
 
-        {/* PAGE TITLE */}
         <div className="text-center mb-12 mt-6">
           <h1 className="text-4xl font-bold">Payment</h1>
           <p className="text-white/80 mt-2">
@@ -52,9 +54,7 @@ const PaymentContent = () => {
           </p>
         </div>
 
-        {/* MAIN CONTENT */}
         <div className="max-w-2xl mx-auto space-y-8">
-          {/* ORDER SUMMARY */}
           <div className="bg-white/20 backdrop-blur-lg rounded-2xl shadow-xl p-6">
             <div className="flex items-center gap-3 mb-6">
               <ShoppingCart className="text-white" />
@@ -79,7 +79,6 @@ const PaymentContent = () => {
             </div>
           </div>
 
-          {/* PROMO CODE */}
           <div className="bg-white/20 backdrop-blur-lg rounded-2xl shadow-xl p-6">
             <div className="flex items-center gap-3 mb-6">
               <Tag className="text-white" />
@@ -93,20 +92,19 @@ const PaymentContent = () => {
                 className="flex-1 px-4 py-3 rounded-xl border border-white/40 bg-white/30 text-white placeholder-white/70 outline-none"
               />
 
-              <button className="px-6 py-3 rounded-xl bg-white text-purple-600 font-semibold shadow hover:scale-105 transition">
+              <button className="px-6 cursor-pointer py-3 rounded-xl bg-white text-purple-600 font-semibold shadow hover:scale-105 transition">
                 Apply
               </button>
             </div>
           </div>
 
-          {/* PAYMENT METHOD */}
           <div className="bg-white/20 backdrop-blur-lg rounded-2xl shadow-xl p-6">
             <div className="flex items-center gap-3 mb-6">
               <CreditCard className="text-white" />
               <h2 className="text-xl font-semibold">Payment Method</h2>
             </div>
 
-            <div className="border-2 border-white/40 rounded-xl p-5 flex justify-between items-center">
+            <div className="border-2 border-white/40 cursor-pointer rounded-xl p-5 flex justify-between items-center">
               <div>
                 <p className="font-semibold">Online Payment</p>
                 <p className="text-white/70 text-sm">
@@ -120,18 +118,16 @@ const PaymentContent = () => {
             </div>
           </div>
 
-          {/* PAYMENT BUTTON */}
           <button
             onClick={createOrder}
             disabled={loading}
-            className="w-full py-4 rounded-2xl bg-white text-purple-600 text-lg font-semibold flex items-center justify-center gap-2 hover:scale-105 transition shadow-xl"
+            className="w-full py-4 cursor-pointer rounded-2xl bg-white text-purple-600 text-lg font-semibold flex items-center justify-center gap-2 hover:scale-105 transition shadow-xl"
           >
             <Lock size={18} />
             {loading ? "Processing Payment..." : "Proceed to Payment"}
           </button>
         </div>
 
-        {/* RAZORPAY SCRIPT */}
         <Script
           src="https://checkout.razorpay.com/v1/checkout.js"
           strategy="lazyOnload"

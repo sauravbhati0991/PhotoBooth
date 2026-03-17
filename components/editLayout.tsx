@@ -59,7 +59,6 @@ export default function EditLayout() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-r from-purple-500 via-pink-400 to-purple-600 px-4">
-      {/* Back Button */}
       <nav className="fixed top-5 left-5">
         <button
           onClick={() => router.back()}
@@ -69,16 +68,14 @@ export default function EditLayout() {
         </button>
       </nav>
 
-      {/* Title */}
       <h2 className="text-2xl md:text-3xl font-semibold text-white mb-12 text-center">
         Select the Template
       </h2>
 
       <div className="flex items-center gap-4 w-full max-w-6xl">
-        {/* Left Arrow */}
         <button
           onClick={() => scroll("left")}
-          className="p-3 rounded-full bg-white/80 backdrop-blur-md shadow-lg hover:scale-110 transition"
+          className="p-3 rounded-full cursor-pointer bg-white/80 backdrop-blur-md shadow-lg hover:scale-110 transition"
         >
           <ChevronLeft size={26} />
         </button>
@@ -101,7 +98,6 @@ export default function EditLayout() {
                   className="flex flex-col items-center cursor-pointer hover:scale-110 transition"
                   style={{ width: gridWidth + FRAME * 2 }}
                 >
-                  {/* Template Preview */}
                   <div
                     className="rounded-2xl shadow-lg flex items-center justify-center"
                     style={{
@@ -136,7 +132,6 @@ export default function EditLayout() {
                     </div>
                   </div>
 
-                  {/* Template Name */}
                   <p className="text-white mt-3 text-sm font-medium text-center">
                     {t.name}
                   </p>
@@ -146,10 +141,9 @@ export default function EditLayout() {
           </div>
         )}
 
-        {/* Right Arrow */}
         <button
           onClick={() => scroll("right")}
-          className="p-3 rounded-full bg-white/80 backdrop-blur-md shadow-lg hover:scale-110 transition"
+          className="p-3 rounded-full cursor-pointer bg-white/80 backdrop-blur-md shadow-lg hover:scale-110 transition"
         >
           <ChevronRight size={26} />
         </button>
