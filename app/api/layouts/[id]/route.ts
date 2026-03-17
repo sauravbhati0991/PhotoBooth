@@ -2,7 +2,6 @@ import { NextRequest } from "next/server";
 import clientPromise from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 
-// ✅ GET
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -34,7 +33,6 @@ export async function GET(
   }
 }
 
-// ✅ PUT
 export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -57,10 +55,9 @@ export async function PUT(
   }
 }
 
-// ✅ DELETE
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;

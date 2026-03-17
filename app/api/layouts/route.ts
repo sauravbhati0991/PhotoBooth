@@ -47,7 +47,6 @@ export async function POST(req: Request) {
     const client = await clientPromise;
     const db = client.db("photobooth");
 
-    /* ---------- Prevent duplicate layout names ---------- */
     const existingLayout = await db.collection<Layout>("layouts").findOne({
       name: { $regex: `^${body.name}$`, $options: "i" }, // case insensitive
     });

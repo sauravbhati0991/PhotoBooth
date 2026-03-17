@@ -14,13 +14,11 @@ export async function POST(req: Request) {
       return Response.json({ error: "Missing gif or image" }, { status: 400 });
     }
 
-    // 🎞 Upload GIF
     const gifUpload = await cloudinary.uploader.upload(gif, {
       folder: "photobooth/gifs",
       resource_type: "image", // important for base64 gif
     });
 
-    // 🖼 Upload IMAGE
     const imageUpload = await cloudinary.uploader.upload(image, {
       folder: "photobooth/images",
     });
