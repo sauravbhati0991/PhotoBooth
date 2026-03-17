@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import QRCode from "qrcode";
 
@@ -8,126 +8,223 @@ export default function SuccessContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
+  const gif = searchParams.get("gif");
   const img = searchParams.get("img");
+
+  const rows = Number(searchParams.get("rows")) || 2;
+  const cols = Number(searchParams.get("cols")) || 2;
 
   const [qr, setQr] = useState("");
 
+  // ================================
+  // QR
+  // ================================
   const downloadUrl =
+    typeof window !== "undefined" &&
+    gif &&
     img &&
-    `${typeof window !== "undefined" ? window.location.origin : ""}/download?img=${encodeURIComponent(
-      img,
-    )}`;
+    `${window.location.origin}/download?gif=${encodeURIComponent(
+      gif,
+    )}&img=${encodeURIComponent(img)}&rows=${rows}&cols=${cols}`;
 
   useEffect(() => {
     if (!downloadUrl) return;
-
     QRCode.toDataURL(downloadUrl).then(setQr);
   }, [downloadUrl]);
 
-  const handleDownload = async () => {
-    if (!img) return;
+  // ================================
+  // 🔥 FIXED PREVIEW SCALING
+  // ================================
+  const CELL = 260;
+  const GAP = 20;
+  const PADDING = 40;
 
-    const response = await fetch(img);
-    const blob = await response.blob();
+  const layoutWidth = cols * CELL + GAP * (cols - 1) + PADDING * 2;
+  const layoutHeight = rows * CELL + GAP * (rows - 1) + PADDING * 2;
 
-    const url = window.URL.createObjectURL(blob);
+  const CONTAINER_WIDTH = 300;
+  const CONTAINER_HEIGHT = 450;
 
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "photobooth.gif";
+  const scale = Math.min(
+    CONTAINER_WIDTH / layoutWidth,
+    CONTAINER_HEIGHT / layoutHeight,
+  );
 
-    document.body.appendChild(link);
-    link.click();
+  // ================================
+  // DOWNLOAD
+  // ================================
+  const handleDownload = async (url: string, name: string) => {
+    if (!url) return;
 
-    link.remove();
-    window.URL.revokeObjectURL(url);
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const objectUrl = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = objectUrl;
+    a.download = name;
+    a.click();
+
+    URL.revokeObjectURL(objectUrl);
   };
 
-  const handleShare = async () => {
+  // ================================
+  // PRINT
+  // ================================
+  const handlePrint = () => {
     if (!img) return;
 
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: "My Photobooth GIF",
-          text: "Check out my photobooth GIF!",
-          url: img,
-        });
-      } else {
-        await navigator.clipboard.writeText(img);
-        alert("Link copied to clipboard!");
-      }
-    } catch (err) {
-      console.error(err);
+    const win = window.open("", "_blank");
+    if (!win) return;
+
+    win.document.write(`
+      <html>
+        <head>
+          <style>
+            @page { size: 4in 6in; margin: 0; }
+            body {
+              margin:0;
+              display:flex;
+              justify-content:center;
+              align-items:center;
+              background:white;
+            }
+            img {
+              max-width:90%;
+              max-height:90%;
+              border-radius:12px;
+            }
+          </style>
+        </head>
+        <body>
+          <img src="${img}" />
+        </body>
+      </html>
+    `);
+
+    win.document.close();
+    setTimeout(() => win.print(), 500);
+  };
+
+  // ================================
+  // SHARE
+  // ================================
+  const handleShare = async () => {
+    if (!gif) return;
+
+    if (navigator.share) {
+      await navigator.share({
+        title: "Photobooth",
+        url: gif,
+      });
+    } else {
+      await navigator.clipboard.writeText(gif);
+      alert("GIF link copied!");
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-r from-purple-500 via-pink-400 to-purple-600 text-white px-6 py-12">
+    <div className="min-h-screen flex flex-col items-center bg-gradient-to-r from-purple-500 via-pink-400 to-purple-600 text-white px-4 py-8">
       {/* TITLE */}
-      <h1 className="text-4xl font-bold mb-3 text-center">
+      <h1 className="text-2xl sm:text-4xl font-bold mb-3 text-center">
         🎉 Payment Successful
       </h1>
 
-      <p className="text-white/80 mb-12 text-center">
-        Your photobooth GIF is ready!
+      <p className="text-white/80 mb-8 text-center">
+        Your photobooth is ready!
       </p>
 
-      {/* CONTENT */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center w-full max-w-6xl">
+      {/* PREVIEWS */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full max-w-6xl">
         {/* GIF PREVIEW */}
-        {img && (
-          <div className="flex justify-center">
-            <div className="bg-white/20 backdrop-blur-lg rounded-[32px] p-6 shadow-2xl w-full max-w-[900px]">
-              <div className="rounded-[28px] overflow-hidden">
+        {gif && (
+          <div className="flex flex-col items-center gap-4">
+            <p className="text-white/80">GIF Preview</p>
+
+            <div className="bg-white/20 backdrop-blur-lg rounded-2xl p-4 flex justify-center items-center">
+              {/* 🔥 FIXED CONTAINER WITH ROUND CLIP */}
+              <div
+                style={{ width: 300, height: 450 }}
+                className="flex justify-center items-center overflow-hidden rounded-2xl"
+              >
                 <img
-                  src={img}
-                  alt="Photobooth GIF"
-                  className="w-full h-auto object-cover"
+                  src={gif}
+                  className="max-w-full max-h-full object-contain"
                 />
               </div>
             </div>
+
+            <button
+              onClick={() => handleDownload(gif, "photobooth.gif")}
+              className="px-6 py-2 bg-white text-purple-600 rounded-lg font-semibold"
+            >
+              Download GIF
+            </button>
           </div>
         )}
 
-        {/* QR CODE */}
-        {qr && (
-          <div className="flex flex-col items-center gap-6">
-            <p className="text-white/80 text-sm">Scan to download</p>
+        {/* IMAGE PREVIEW */}
+        {img && (
+          <div className="flex flex-col items-center gap-4">
+            <p className="text-white/80">Image Preview</p>
 
-            <img
-              src={qr}
-              alt="QR Code"
-              className="w-56 bg-white p-4 rounded-2xl shadow-xl"
-            />
+            <div className="bg-white/20 backdrop-blur-lg rounded-2xl p-4 flex justify-center items-center">
+              {/* 🔥 SAME FIX */}
+              <div
+                style={{ width: 300, height: 450 }}
+                className="flex justify-center items-center overflow-hidden"
+              >
+                <img
+                  src={img}
+                  className="w-full h-full object-contain rounded-xl"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 flex-wrap justify-center">
+              <button
+                onClick={() => handleDownload(img, "photobooth.jpg")}
+                className="px-6 py-2 bg-white text-purple-600 rounded-lg font-semibold"
+              >
+                Download Image
+              </button>
+
+              <button
+                onClick={handlePrint}
+                className="px-6 py-2 bg-white/80 text-purple-700 rounded-lg font-semibold"
+              >
+                Print
+              </button>
+            </div>
           </div>
         )}
       </div>
 
-      {/* ACTION BUTTONS */}
-      <div className="flex flex-wrap justify-center gap-6 mt-12">
-        <button
-          onClick={handleDownload}
-          className="px-8 py-3 rounded-xl bg-white text-purple-600 font-semibold shadow-lg hover:scale-105 transition"
-        >
-          Download
-        </button>
+      {/* QR */}
+      {qr && (
+        <div className="flex flex-col items-center gap-4 mt-10">
+          <p className="text-white/80 text-sm">Scan to download image</p>
 
+          <img src={qr} alt="QR" className="w-44 bg-white p-3 rounded-xl" />
+        </div>
+      )}
+
+      {/* ACTIONS */}
+      <div className="flex flex-wrap justify-center gap-4 mt-10">
         <button
           onClick={handleShare}
-          className="px-8 py-3 rounded-xl bg-white/80 text-purple-700 font-semibold shadow-lg hover:scale-105 transition"
+          className="px-6 py-2 bg-white text-purple-600 rounded-lg font-semibold"
         >
-          Share
+          Share GIF
+        </button>
+
+        <button
+          onClick={() => router.push("/")}
+          className="px-6 py-2 bg-white/80 text-purple-700 rounded-lg font-semibold"
+        >
+          Back to Home
         </button>
       </div>
-
-      {/* BACK */}
-      <button
-        onClick={() => router.push("/")}
-        className="mt-12 px-10 py-3 bg-white text-purple-600 font-semibold rounded-xl shadow-lg hover:scale-105 transition"
-      >
-        Back to Home
-      </button>
     </div>
   );
 }

@@ -8,14 +8,26 @@ cloudinary.config({
 
 export async function POST(req: Request) {
   try {
-    const { image } = await req.json();
+    const { gif, image } = await req.json();
 
-    const upload = await cloudinary.uploader.upload(image, {
-      folder: "photobooth/layouts",
+    if (!gif || !image) {
+      return Response.json({ error: "Missing gif or image" }, { status: 400 });
+    }
+
+    // 🎞 Upload GIF
+    const gifUpload = await cloudinary.uploader.upload(gif, {
+      folder: "photobooth/gifs",
+      resource_type: "image", // important for base64 gif
+    });
+
+    // 🖼 Upload IMAGE
+    const imageUpload = await cloudinary.uploader.upload(image, {
+      folder: "photobooth/images",
     });
 
     return Response.json({
-      url: upload.secure_url,
+      gifUrl: gifUpload.secure_url,
+      imageUrl: imageUpload.secure_url,
     });
   } catch (error) {
     console.error("Upload error:", error);

@@ -1,96 +1,164 @@
 "use client";
 
+import { useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import QRCode from "qrcode";
+import Link from "next/link";
 
-export default function DownloadContent() {
+export default function SuccessContent() {
   const searchParams = useSearchParams();
+
+  const gif = searchParams.get("gif");
   const img = searchParams.get("img");
 
-  const [downloading, setDownloading] = useState(false);
+  const rows = Number(searchParams.get("rows")) || 2;
+  const cols = Number(searchParams.get("cols")) || 2;
 
-  const handleDownload = async () => {
-    if (!img) return;
+  // ================================
+  // 🔥 FIXED PREVIEW SCALING
+  // ================================
+  const CELL = 260;
+  const GAP = 20;
+  const PADDING = 40;
 
-    try {
-      setDownloading(true);
+  const layoutWidth = cols * CELL + GAP * (cols - 1) + PADDING * 2;
+  const layoutHeight = rows * CELL + GAP * (rows - 1) + PADDING * 2;
 
-      const response = await fetch(img, { mode: "cors" });
-      const blob = await response.blob();
+  const CONTAINER_WIDTH = 300;
+  const CONTAINER_HEIGHT = 450;
 
-      const url = window.URL.createObjectURL(blob);
+  const scale = Math.min(
+    CONTAINER_WIDTH / layoutWidth,
+    CONTAINER_HEIGHT / layoutHeight,
+  );
 
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = "photobooth.gif";
+  // ================================
+  // DOWNLOAD
+  // ================================
+  const handleDownload = async (url: string, name: string) => {
+    if (!url) return;
 
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const objectUrl = URL.createObjectURL(blob);
 
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error("Download failed:", err);
-    } finally {
-      setDownloading(false);
-    }
+    const a = document.createElement("a");
+    a.href = objectUrl;
+    a.download = name;
+    a.click();
+
+    URL.revokeObjectURL(objectUrl);
   };
 
-  const handleShare = async () => {
+  // ================================
+  // PRINT
+  // ================================
+  const handlePrint = () => {
     if (!img) return;
 
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: "My Photobooth Photo",
-          text: "Check out my photobooth photo!",
-          url: img,
-        });
-      } else {
-        alert("Sharing is not supported on this device.");
-      }
-    } catch (error) {
-      console.log("Share cancelled or failed:", error);
-    }
+    const win = window.open("", "_blank");
+    if (!win) return;
+
+    win.document.write(`
+      <html>
+        <head>
+          <style>
+            @page { size: 4in 6in; margin: 0; }
+            body {
+              margin:0;
+              display:flex;
+              justify-content:center;
+              align-items:center;
+              background:white;
+            }
+            img {
+              max-width:90%;
+              max-height:90%;
+              border-radius:12px;
+            }
+          </style>
+        </head>
+        <body>
+          <img src="${img}" />
+        </body>
+      </html>
+    `);
+
+    win.document.close();
+    setTimeout(() => win.print(), 500);
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-8 bg-gradient-to-r from-purple-500 via-pink-400 to-purple-600 text-white px-6 py-10">
-      {/* TITLE */}
-      <h1 className="text-3xl md:text-4xl font-bold text-center">Your Giphy</h1>
+    <div className="min-h-screen flex flex-col items-center bg-gradient-to-r from-purple-500 via-pink-400 to-purple-600 text-white px-4 py-8">
+      <nav className="w-full max-w-6xl flex justify-between items-center mb-6">
+        <Link href="/" className="text-xl sm:text-2xl font-bold">
+          PhotoBooth
+        </Link>
+      </nav>
+      {/* PREVIEWS */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full max-w-6xl">
+        {/* GIF PREVIEW */}
+        {gif && (
+          <div className="flex flex-col items-center gap-4">
+            <p className="text-white/80">GIF Preview</p>
 
-      {/* GIF PREVIEW */}
-      {img && (
-        <div className="w-full max-w-[420px] bg-white/20 backdrop-blur-lg rounded-3xl p-5 shadow-xl flex justify-center">
-          <img
-            src={img}
-            alt="Photobooth result"
-            className="w-full h-auto object-contain rounded-xl"
-          />
-        </div>
-      )}
+            <div className="bg-white/20 backdrop-blur-lg rounded-2xl p-4 flex justify-center items-center">
+              {/* 🔥 FIXED CONTAINER WITH ROUND CLIP */}
+              <div
+                style={{ width: 300, height: 450 }}
+                className="flex justify-center items-center overflow-hidden rounded-2xl"
+              >
+                <img
+                  src={gif}
+                  className="max-w-full max-h-full object-contain"
+                />
+              </div>
+            </div>
 
-      {/* BUTTONS */}
-      <div className="flex gap-4 flex-wrap justify-center">
-        <button
-          onClick={handleDownload}
-          disabled={downloading}
-          className={`px-6 py-3 rounded-xl font-medium shadow-lg transition
-      ${
-        downloading
-          ? "bg-gray-400 cursor-not-allowed"
-          : "bg-white text-purple-600 hover:scale-105"
-      }`}
-        >
-          {downloading ? "Downloading..." : "Download"}
-        </button>
+            <button
+              onClick={() => handleDownload(gif, "photobooth.gif")}
+              className="px-6 py-2 bg-white text-purple-600 rounded-lg font-semibold"
+            >
+              Download GIF
+            </button>
+          </div>
+        )}
 
-        <button
-          onClick={handleShare}
-          className="px-6 py-3 rounded-xl bg-white/80 text-purple-700 font-medium shadow-lg hover:scale-105 transition"
-        >
-          Share
-        </button>
+        {/* IMAGE PREVIEW */}
+        {img && (
+          <div className="flex flex-col items-center gap-4">
+            <p className="text-white/80">Image Preview</p>
+
+            <div className="bg-white/20 backdrop-blur-lg rounded-2xl p-4 flex justify-center items-center">
+              {/* 🔥 SAME FIX */}
+              <div
+                style={{ width: 300, height: 450 }}
+                className="flex justify-center items-center overflow-hidden"
+              >
+                <img
+                  src={img}
+                  className="w-full h-full object-contain rounded-xl"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 flex-wrap justify-center">
+              <button
+                onClick={() => handleDownload(img, "photobooth.jpg")}
+                className="px-6 py-2 bg-white text-purple-600 rounded-lg font-semibold"
+              >
+                Download Image
+              </button>
+
+              <button
+                onClick={handlePrint}
+                className="px-6 py-2 bg-white/80 text-purple-700 rounded-lg font-semibold"
+              >
+                Print
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
