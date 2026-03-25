@@ -14,9 +14,6 @@ export default function SuccessContent() {
   const rows = Number(searchParams.get("rows")) || 2;
   const cols = Number(searchParams.get("cols")) || 2;
 
-  // ================================
-  // 🔥 FIXED PREVIEW SCALING
-  // ================================
   const CELL = 260;
   const GAP = 20;
   const PADDING = 40;
@@ -32,9 +29,6 @@ export default function SuccessContent() {
     CONTAINER_HEIGHT / layoutHeight,
   );
 
-  // ================================
-  // DOWNLOAD
-  // ================================
   const handleDownload = async (url: string, name: string) => {
     if (!url) return;
 
@@ -50,9 +44,6 @@ export default function SuccessContent() {
     URL.revokeObjectURL(objectUrl);
   };
 
-  // ================================
-  // PRINT
-  // ================================
   const handlePrint = () => {
     if (!img) return;
 
