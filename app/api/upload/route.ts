@@ -10,6 +10,15 @@ export async function POST(req: Request) {
   try {
     const { gif, image } = await req.json();
 
+    // Single image upload (e.g. layout background)
+    if (image && !gif) {
+      const upload = await cloudinary.uploader.upload(image, {
+        folder: "photobooth/backgrounds",
+      });
+      return Response.json({ url: upload.secure_url });
+    }
+
+    // Gif + image upload (photobooth capture)
     if (!gif || !image) {
       return Response.json({ error: "Missing gif or image" }, { status: 400 });
     }
