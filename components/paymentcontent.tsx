@@ -19,8 +19,9 @@ const PaymentContent = () => {
   const cols = searchParams.get("cols");
 
   const [loading, setLoading] = useState(false);
+  const [copies, setCopies] = useState(1);
 
-  const amount = price;
+  const amount = price * copies;
 
   const createOrder = async () => {
     setLoading(true);
@@ -68,8 +69,27 @@ const PaymentContent = () => {
               </div>
 
               <div className="flex justify-between">
-                <span>Price</span>
+                <span>Price per Layout</span>
                 <span>₹{price}</span>
+              </div>
+
+              <div className="flex justify-between items-center bg-white/10 p-3 rounded-xl border border-white/10">
+                <span className="font-medium">Number of Copies</span>
+                <div className="flex items-center gap-4 bg-white/20 rounded-lg p-1">
+                  <button
+                    onClick={() => setCopies(Math.max(1, copies - 1))}
+                    className="w-8 h-8 flex items-center cursor-pointer justify-center bg-white/20 rounded-md hover:bg-white/30 transition-colors"
+                  >
+                    -
+                  </button>
+                  <span className="w-6 text-center font-bold text-lg">{copies}</span>
+                  <button
+                    onClick={() => setCopies(copies + 1)}
+                    className="w-8 h-8 flex items-center cursor-pointer justify-center bg-white/20 rounded-md hover:bg-white/30 transition-colors"
+                  >
+                    +
+                  </button>
+                </div>
               </div>
             </div>
 
