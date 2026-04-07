@@ -99,7 +99,6 @@ export default function EditLayoutContent() {
           const ctx = canvas.getContext("2d");
           if (!ctx) continue;
 
-          ctx.filter = filter;
           ctx.drawImage(video, 0, 0);
 
           frames.push(canvas.toDataURL("image/jpeg"));
@@ -244,6 +243,8 @@ export default function EditLayoutContent() {
           ctx.fillRect(0, 0, canvasWidth, canvasHeight);
         }
 
+        ctx.filter = filter;
+
         for (let i = 0; i < framesList.length; i++) {
           const frame = framesList[i]?.[f];
           if (!frame) continue;
@@ -281,6 +282,8 @@ export default function EditLayoutContent() {
         imageCtx.fillStyle = bgValue;
         imageCtx.fillRect(0, 0, canvasWidth, canvasHeight);
       }
+
+      imageCtx.filter = filter;
 
       for (let i = 0; i < staticImages.length; i++) {
         const frame = staticImages[i];
@@ -370,8 +373,8 @@ export default function EditLayoutContent() {
             className="w-full h-full object-cover transform scale-x-[-1]" // Balanced mirroring
             videoConstraints={{
               facingMode: "user",
-              width: 1280,
-              height: 720
+              width: { ideal: 1920 },
+              height: { ideal: 1080 }
             }}
             style={{ filter }}
           />
@@ -489,7 +492,7 @@ export default function EditLayoutContent() {
                       }}
                     >
                       {img ? (
-                        <img src={img} className="w-full h-full object-cover" />
+                        <img src={img} className="w-full h-full object-cover" style={{ filter }} />
                       ) : (
                         <div className="flex flex-col items-center justify-center h-full text-gray-400 group">
                           <span className="text-2xl font-bold group-hover:scale-125 transition-transform text-purple-200">+</span>

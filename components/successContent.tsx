@@ -167,13 +167,6 @@ export default function SuccessContent() {
               >
                 Download Image
               </button>
-
-              <button
-                onClick={handlePrint}
-                className="px-6 py-2 cursor-pointer bg-white/80 text-purple-700 rounded-lg font-semibold"
-              >
-                Print
-              </button>
             </div>
           </div>
         )}
