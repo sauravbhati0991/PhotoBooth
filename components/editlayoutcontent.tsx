@@ -498,6 +498,7 @@ export default function EditLayoutContent() {
                           <span className="text-2xl font-bold group-hover:scale-125 transition-transform text-purple-200">+</span>
                           <span className="text-[10px] uppercase tracking-tighter opacity-0 group-hover:opacity-100 transition-opacity">Select</span>
                         </div>
+                        //jhv
                       )}
 
                       {selectedCell === i && !img && (
