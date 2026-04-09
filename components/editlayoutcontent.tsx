@@ -101,7 +101,7 @@ export default function EditLayoutContent() {
 
           ctx.drawImage(video, 0, 0);
 
-          frames.push(canvas.toDataURL("image/jpeg"));
+          frames.push(canvas.toDataURL("image/jpeg", 1.0));
 
           await new Promise((res) => setTimeout(res, 250));
         }
@@ -215,9 +215,9 @@ export default function EditLayoutContent() {
 
     try {
       const FRAME_COUNT = 6;
-      const CELL = 260;
-      const GAP = 20;
-      const PADDING = 40;
+      const CELL = 540;
+      const GAP = 30;
+      const PADDING = 60;
 
       const canvasWidth = cols * CELL + GAP * (cols - 1) + PADDING * 2;
       const canvasHeight = rows * CELL + GAP * (rows - 1) + PADDING * 2;
@@ -262,7 +262,7 @@ export default function EditLayoutContent() {
           drawRoundedImage(ctx, img, x, y, CELL, CELL, 20);
         }
 
-        layoutFrames.push(canvas.toDataURL("image/jpeg"));
+        layoutFrames.push(canvas.toDataURL("image/jpeg", 1.0));
       }
 
       const imageCanvas = document.createElement("canvas");
@@ -302,7 +302,7 @@ export default function EditLayoutContent() {
         drawRoundedImage(imageCtx, img, x, y, CELL, CELL, 20);
       }
 
-      const finalImage = imageCanvas.toDataURL("image/jpeg");
+      const finalImage = imageCanvas.toDataURL("image/png");
 
       gifshot.createGIF(
         {
