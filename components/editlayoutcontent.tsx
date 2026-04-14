@@ -59,6 +59,7 @@ export default function EditLayoutContent() {
   const [capturing, setCapturing] = useState(false);
   const [selectedCell, setSelectedCell] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
+  const [saveProgress, setSaveProgress] = useState(0);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [isAutoCapturing, setIsAutoCapturing] = useState(false);
 
@@ -93,13 +94,19 @@ export default function EditLayoutContent() {
 
         for (let i = 0; i < 6; i++) {
           const canvas = document.createElement("canvas");
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
+
+          // Use crop to create a square image matching the aspect-square view
+          const minDim = Math.min(video.videoWidth, video.videoHeight);
+          canvas.width = minDim;
+          canvas.height = minDim;
 
           const ctx = canvas.getContext("2d");
           if (!ctx) continue;
 
-          ctx.drawImage(video, 0, 0);
+          const sx = (video.videoWidth - minDim) / 2;
+          const sy = (video.videoHeight - minDim) / 2;
+
+          ctx.drawImage(video, sx, sy, minDim, minDim, 0, 0, minDim, minDim);
 
           frames.push(canvas.toDataURL("image/jpeg", 1.0));
 
@@ -212,12 +219,13 @@ export default function EditLayoutContent() {
     if (!allFilled || saving) return;
 
     setSaving(true);
+    setSaveProgress(0);
 
     try {
       const FRAME_COUNT = 6;
-      const CELL = 540;
-      const GAP = 30;
-      const PADDING = 60;
+      const CELL = 1080;
+      const GAP = 60;
+      const PADDING = 120;
 
       const canvasWidth = cols * CELL + GAP * (cols - 1) + PADDING * 2;
       const canvasHeight = rows * CELL + GAP * (rows - 1) + PADDING * 2;
@@ -304,18 +312,30 @@ export default function EditLayoutContent() {
 
       const finalImage = imageCanvas.toDataURL("image/png");
 
+      // Scale down GIF generation to prevent incredibly slow processing and huge uploads
+      const maxGifSize = 800;
+      const gifRatio = Math.min(1, maxGifSize / Math.max(canvasWidth, canvasHeight));
+      const gifW = Math.round(canvasWidth * gifRatio);
+      const gifH = Math.round(canvasHeight * gifRatio);
+
       gifshot.createGIF(
         {
           images: layoutFrames,
           interval: 0.25,
-          gifWidth: canvasWidth,
-          gifHeight: canvasHeight,
+          gifWidth: gifW,
+          gifHeight: gifH,
+          progressCallback: (captureProgress: number) => {
+            setSaveProgress(Math.floor(captureProgress * 80)); // 0-80% for gif creation
+          }
         },
         async (obj: GifResult) => {
           if (obj.error) {
             setSaving(false);
+            setSaveProgress(0);
             return;
           }
+
+          setSaveProgress(85); // GIF done, preparing upload
 
           try {
             const res = await fetch("/api/upload", {
@@ -330,6 +350,8 @@ export default function EditLayoutContent() {
             });
 
             const data = await res.json();
+
+            setSaveProgress(100); // Upload done
 
             router.push(
               `/payment?title=${encodeURIComponent(title)}
@@ -366,7 +388,7 @@ export default function EditLayoutContent() {
 
       {/* Enlarged Capture Screen Section */}
       <div className="w-full max-w-5xl flex flex-col items-center gap-6 mb-12">
-        <div className="relative w-full max-w-[800px] aspect-video rounded-3xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.3)] ring-8 ring-white/10 group">
+        <div className="relative w-full max-w-[600px] aspect-square rounded-3xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.3)] ring-8 ring-white/10 group">
           <Webcam
             ref={webcamRef}
             screenshotFormat="image/jpeg"
@@ -411,9 +433,9 @@ export default function EditLayoutContent() {
         <div className="flex flex-wrap justify-center gap-4">
           <button
             onClick={() => handleCapture()}
-            disabled={capturing || selectedCell === null || isAutoCapturing}
+            disabled={capturing || selectedCell === null || isAutoCapturing || saving}
             className={`px-10 py-4 rounded-2xl font-bold text-lg shadow-xl transform active:scale-95 transition-all duration-300 flex items-center gap-3
-              ${capturing || selectedCell === null || isAutoCapturing
+              ${capturing || selectedCell === null || isAutoCapturing || saving
                 ? "bg-white/40 text-white/50 cursor-not-allowed scale-95"
                 : "bg-white text-purple-600 hover:bg-purple-50 hover:shadow-2xl cursor-pointer"
               }`}
@@ -424,9 +446,9 @@ export default function EditLayoutContent() {
 
           <button
             onClick={handleAutoCapture}
-            disabled={capturing || isAutoCapturing}
+            disabled={capturing || isAutoCapturing || saving}
             className={`px-10 py-4 rounded-2xl font-bold text-lg shadow-xl transform active:scale-95 transition-all duration-300 flex items-center gap-3
-              ${capturing || isAutoCapturing
+              ${capturing || isAutoCapturing || saving
                 ? "bg-purple-800/40 text-white/50 cursor-not-allowed scale-95"
                 : "bg-purple-600 text-white hover:bg-purple-700 hover:shadow-2xl cursor-pointer border border-white/20"
               }`}
@@ -525,10 +547,11 @@ export default function EditLayoutContent() {
               <button
                 key={f.value}
                 onClick={() => setFilter(f.value)}
-                className={`px-4 py-3 text-sm cursor-pointer rounded-2xl transition-all duration-300 font-medium ${filter === f.value
+                disabled={saving}
+                className={`px-4 py-3 text-sm rounded-2xl transition-all duration-300 font-medium ${filter === f.value
                   ? "bg-white text-purple-600 shadow-lg scale-105"
                   : "bg-white/10 hover:bg-white/20 text-white"
-                  }`}
+                  } ${saving ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
               >
                 {f.name}
               </button>
@@ -547,13 +570,29 @@ export default function EditLayoutContent() {
         <button
           onClick={generateLayoutGif}
           disabled={saving}
-          className={`mt-8 px-8 py-3 rounded-xl cursor-pointer font-semibold w-full max-w-[300px]
+          className={`relative overflow-hidden mt-8 px-8 py-3 rounded-xl font-semibold w-full max-w-[300px] transition-all
     ${saving
-              ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-              : "bg-white text-purple-600 cursor-pointer"
+              ? "bg-purple-900/50 text-white cursor-wait"
+              : "bg-white text-purple-600 cursor-pointer hover:bg-white/90"
             }`}
         >
-          {saving ? "Saving..." : "Save Layout"}
+          {saving && (
+            <>
+              <div
+                className="absolute left-0 top-0 bottom-0 bg-purple-500 transition-all duration-300 ease-out"
+                style={{ width: `${saveProgress}%` }}
+              ></div>
+              {/* Wave/Shimmer effect layer */}
+              <div
+                className="absolute inset-0 animate-wave wave-bg z-0"
+                style={{ opacity: saveProgress > 0 ? 1 : 0 }}
+              ></div>
+            </>
+          )}
+
+          <span className="relative z-10 flex flex-col items-center justify-center">
+            {saving ? `Saving... ${saveProgress}%` : "Save Layout"}
+          </span>
         </button>
       )}
     </div>

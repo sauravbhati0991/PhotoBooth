@@ -62,3 +62,21 @@ body {
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.5);
 }
+@keyframes wave {
+  0% { transform: translateX(-100%) skewX(-15deg); }
+  50% { transform: translateX(0%) skewX(-15deg); }
+  100% { transform: translateX(100%) skewX(-15deg); }
+}
+
+.animate-wave {
+  animation: wave 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.wave-bg {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+}
