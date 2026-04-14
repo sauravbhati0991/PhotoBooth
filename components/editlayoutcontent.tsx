@@ -389,7 +389,7 @@ export default function EditLayoutContent() {
 
       {/* Enlarged Capture Screen Section */}
       <div className="w-full max-w-5xl flex flex-col items-center gap-6 mb-12">
-        <div className="relative w-full max-w-[600px] aspect-square rounded-3xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.3)] ring-8 ring-white/10 group">
+        <div className="relative w-full max-w-[500px] aspect-square rounded-3xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.3)] ring-8 ring-white/10 group">
           <Webcam
             ref={webcamRef}
             screenshotFormat="image/jpeg"
