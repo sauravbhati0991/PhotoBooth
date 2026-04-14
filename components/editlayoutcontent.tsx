@@ -62,6 +62,7 @@ export default function EditLayoutContent() {
   const [saveProgress, setSaveProgress] = useState(0);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [isAutoCapturing, setIsAutoCapturing] = useState(false);
+  const [camError, setCamError] = useState<string | null>(null);
 
   const filters = [
     { name: "Original", value: "none" },
@@ -399,7 +400,23 @@ export default function EditLayoutContent() {
               height: { ideal: 1080 }
             }}
             style={{ filter }}
+            onUserMediaError={(err) => {
+              console.error("Camera Error:", err);
+              if (typeof window !== "undefined" && window.location.protocol !== "https:" && window.location.hostname !== "localhost") {
+                setCamError("Camera requires HTTPS to work. Ensure your deployed site uses https://");
+              } else {
+                setCamError("Camera access denied or device not found. Please allow permissions in your browser.");
+              }
+            }}
           />
+
+          {camError && (
+            <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center text-center p-6 z-30">
+              <span className="text-red-400 text-4xl mb-4">⚠️</span>
+              <h3 className="text-xl font-bold text-white mb-2">Camera Unavailable</h3>
+              <p className="text-white/80">{camError}</p>
+            </div>
+          )}
 
           {/* Countdown Overlay */}
           {countdown !== null && (
