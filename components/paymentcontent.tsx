@@ -2,10 +2,16 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { CreditCard, Tag, ShoppingCart, Lock, ArrowLeft } from "lucide-react";
+import { CreditCard, Tag, ShoppingCart, Lock, ArrowLeft, AlertCircle } from "lucide-react";
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Script from "next/script";
+
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
 
 const PaymentContent = () => {
   const router = useRouter();
@@ -20,23 +26,94 @@ const PaymentContent = () => {
 
   const [loading, setLoading] = useState(false);
   const [copies, setCopies] = useState(1);
+  const [error, setError] = useState<string | null>(null);
 
   const amount = price * copies;
 
-  const createOrder = async () => {
+  const handlePayment = async () => {
     setLoading(true);
+    setError(null);
 
-    router.push(
-      `/success?gif=${encodeURIComponent(gif || "")}
-  &img=${encodeURIComponent(img || "")}
-  &rows=${rows}
-  &cols=${cols}`,
-    );
+    try {
+      // Step 1: Create order on the server
+      const orderRes = await fetch("/api/createOrder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount }),
+      });
+
+      if (!orderRes.ok) {
+        throw new Error("Failed to create order. Please try again.");
+      }
+
+      const order = await orderRes.json();
+
+      // Step 2: Open Razorpay checkout
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        amount: order.amount,
+        currency: order.currency,
+        name: "PhotoBooth",
+        description: `${title} × ${copies}`,
+        order_id: order.id,
+        handler: async (response: any) => {
+          try {
+            // Step 3: Verify payment signature on the server
+            const verifyRes = await fetch("/api/verifyPayment", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              }),
+            });
+
+            const verifyData = await verifyRes.json();
+
+            if (verifyData.verified) {
+              // Step 4: Redirect to success page
+              router.push(
+                `/success?gif=${encodeURIComponent(gif || "")}&img=${encodeURIComponent(img || "")}&rows=${rows}&cols=${cols}`,
+              );
+            } else {
+              setError("Payment verification failed. Please contact support.");
+              setLoading(false);
+            }
+          } catch {
+            setError("Payment verification failed. Please try again.");
+            setLoading(false);
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            setLoading(false);
+          },
+        },
+        theme: {
+          color: "#9333ea",
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+
+      rzp.on("payment.failed", (response: any) => {
+        setError(
+          response.error?.description ||
+            "Payment failed. Please try again.",
+        );
+        setLoading(false);
+      });
+
+      rzp.open();
+    } catch (err: any) {
+      setError(err.message || "Something went wrong. Please try again.");
+      setLoading(false);
+    }
   };
 
   return (
     <>
-      {" "}
       <div className="min-h-screen bg-gradient-to-r from-purple-500 via-pink-400 to-purple-600 px-6 pb-16 text-white">
         <div className="pt-6">
           <button
@@ -56,6 +133,22 @@ const PaymentContent = () => {
         </div>
 
         <div className="max-w-2xl mx-auto space-y-8">
+          {error && (
+            <div className="bg-red-500/20 backdrop-blur-lg border border-red-400/40 rounded-2xl p-4 flex items-start gap-3">
+              <AlertCircle className="text-red-200 shrink-0 mt-0.5" size={20} />
+              <div>
+                <p className="font-semibold text-red-100">Payment Error</p>
+                <p className="text-red-200/90 text-sm mt-1">{error}</p>
+              </div>
+              <button
+                onClick={() => setError(null)}
+                className="ml-auto text-red-200/70 hover:text-white cursor-pointer text-lg"
+              >
+                ×
+              </button>
+            </div>
+          )}
+
           <div className="bg-white/20 backdrop-blur-lg rounded-2xl shadow-xl p-6">
             <div className="flex items-center gap-3 mb-6">
               <ShoppingCart className="text-white" />
@@ -139,12 +232,16 @@ const PaymentContent = () => {
           </div>
 
           <button
-            onClick={createOrder}
-            disabled={loading}
-            className="w-full py-4 cursor-pointer rounded-2xl bg-white text-purple-600 text-lg font-semibold flex items-center justify-center gap-2 hover:scale-105 transition shadow-xl"
+            onClick={handlePayment}
+            disabled={loading || amount <= 0}
+            className={`w-full py-4 rounded-2xl text-lg font-semibold flex items-center justify-center gap-2 transition shadow-xl
+              ${loading || amount <= 0
+                ? "bg-white/50 text-purple-400 cursor-not-allowed"
+                : "bg-white text-purple-600 cursor-pointer hover:scale-105"
+              }`}
           >
             <Lock size={18} />
-            {loading ? "Processing Payment..." : "Proceed to Payment"}
+            {loading ? "Processing Payment..." : `Pay ₹${amount}`}
           </button>
         </div>
 
