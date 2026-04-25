@@ -6,6 +6,14 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET!,
 });
 
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: "10mb",
+    },
+  },
+};
+
 export async function POST(req: Request) {
   try {
     const { gif, image } = await req.json();

@@ -314,7 +314,7 @@ export default function EditLayoutContent() {
       const finalImage = imageCanvas.toDataURL("image/png");
 
       // Scale down GIF generation to prevent incredibly slow processing and huge uploads
-      const maxGifSize = 800;
+      const maxGifSize = 600;
       const gifRatio = Math.min(1, maxGifSize / Math.max(canvasWidth, canvasHeight));
       const gifW = Math.round(canvasWidth * gifRatio);
       const gifH = Math.round(canvasHeight * gifRatio);
@@ -325,6 +325,8 @@ export default function EditLayoutContent() {
           interval: 0.25,
           gifWidth: gifW,
           gifHeight: gifH,
+          numWorkers: 4,
+          quality: 10,
           progressCallback: (captureProgress: number) => {
             setSaveProgress(Math.floor(captureProgress * 80)); // 0-80% for gif creation
           }
