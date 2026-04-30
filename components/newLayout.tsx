@@ -51,7 +51,7 @@ export default function NewLayout() {
   };
 
   const handleSaveLayout = async () => {
-    if (!layoutName || !count || !price || !selectedLayout) {
+    if (!layoutName || !count || price === null || price === undefined || !selectedLayout) {
       alert("Please fill all required fields");
       return;
     }

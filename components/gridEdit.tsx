@@ -60,7 +60,7 @@ export default function GridEdit() {
                     <h3 className="text-lg font-semibold text-gray-800">
                       {title}
                     </h3>
-                    <p className="text-blue-600 font-bold">₹{price}</p>
+                    <p className="text-blue-600 font-bold">{price === 0 ? "Free" : `₹${price}`}</p>
                   </div>
 
                   <div className="flex gap-3">
@@ -84,7 +84,7 @@ export default function GridEdit() {
           </div>
 
           <div className="p-6 text-center text-lg font-semibold text-blue-700">
-            Total Amount: ₹{amount}
+            Total Amount: {amount === 0 ? "Free" : `₹${amount}`}
           </div>
         </div>
       </div>

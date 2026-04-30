@@ -134,7 +134,7 @@ export default function GridCardsSection() {
                     {t.name}
                   </p>
 
-                  <p className="text-white/80 text-sm">₹{t.price}</p>
+                  <p className="text-white/80 text-sm">{t.price === 0 ? "Free" : `₹${t.price}`}</p>
                 </div>
               );
             })}

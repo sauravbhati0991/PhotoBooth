@@ -31,6 +31,13 @@ const PaymentContent = () => {
   const amount = price * copies;
 
   const handlePayment = async () => {
+    if (amount === 0) {
+      router.push(
+        `/success?gif=${encodeURIComponent(gif || "")}&img=${encodeURIComponent(img || "")}&rows=${rows}&cols=${cols}`,
+      );
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -54,7 +61,7 @@ const PaymentContent = () => {
         amount: order.amount,
         currency: order.currency,
         name: "PhotoBooth",
-        description: `${title} × ${copies}`,
+        description: `${title} \u00d7 ${copies}`,
         order_id: order.id,
         handler: async (response: any) => {
           try {
@@ -163,7 +170,7 @@ const PaymentContent = () => {
 
               <div className="flex justify-between">
                 <span>Price per Layout</span>
-                <span>₹{price}</span>
+                 <span>{price === 0 ? "Free" : `₹${price}`}</span>
               </div>
 
               <div className="flex justify-between items-center bg-white/10 p-3 rounded-xl border border-white/10">
@@ -188,7 +195,7 @@ const PaymentContent = () => {
 
             <div className="border-t border-white/30 mt-6 pt-6 flex justify-between text-lg font-semibold">
               <span>Total</span>
-              <span>₹{amount}</span>
+               <span>{amount === 0 ? "Free" : `₹${amount}`}</span>
             </div>
           </div>
 
@@ -231,17 +238,17 @@ const PaymentContent = () => {
             </div>
           </div>
 
-          <button
+           <button
             onClick={handlePayment}
-            disabled={loading || amount <= 0}
+            disabled={loading}
             className={`w-full py-4 rounded-2xl text-lg font-semibold flex items-center justify-center gap-2 transition shadow-xl
-              ${loading || amount <= 0
+              ${loading
                 ? "bg-white/50 text-purple-400 cursor-not-allowed"
                 : "bg-white text-purple-600 cursor-pointer hover:scale-105"
               }`}
           >
             <Lock size={18} />
-            {loading ? "Processing Payment..." : `Pay ₹${amount}`}
+             {loading ? "Processing..." : amount === 0 ? "Get for Free" : `Pay ₹${amount}`}
           </button>
         </div>
 

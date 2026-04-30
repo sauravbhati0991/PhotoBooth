@@ -89,7 +89,7 @@ export default function EditLayoutPage() {
 
   // 🔥 Save update
   const handleUpdate = async () => {
-    if (!name || !price) {
+    if (!name || price === null || price === undefined) {
       alert("Fill all fields");
       return;
     }
