@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import QRCode from "qrcode";
+import Link from "next/link";
 
 export default function SuccessContent() {
   const searchParams = useSearchParams();
@@ -110,6 +111,20 @@ export default function SuccessContent() {
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-gradient-to-r from-purple-500 via-pink-400 to-purple-600 text-white px-4 py-8">
+      <nav className="w-full max-w-6xl flex justify-between items-center mb-6">
+        <Link href="/" className="text-xl sm:text-2xl font-bold cursor-pointer">
+          PhotoBooth
+        </Link>
+        <div className="flex items-center gap-6">
+          <Link href="/about" className="text-lg font-medium text-white hover:text-white/80 transition-colors">
+            About Us
+          </Link>
+          <Link href="/contact" className="text-lg font-medium text-white hover:text-white/80 transition-colors">
+            Contact Us
+          </Link>
+        </div>
+      </nav>
+
       <h1 className="text-2xl sm:text-4xl font-bold mb-3 text-center">
         🎉 Payment Successful
       </h1>

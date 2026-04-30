@@ -66,6 +66,14 @@ export default function GridCardsSection() {
         <Link href="/" className="text-2xl font-bold text-white">
           PhotoBooth
         </Link>
+        <div className="flex items-center gap-6">
+          <Link href="/about" className="text-lg font-medium text-white hover:text-white/80 transition-colors">
+            About Us
+          </Link>
+          <Link href="/contact" className="text-lg font-medium text-white hover:text-white/80 transition-colors">
+            Contact Us
+          </Link>
+        </div>
       </nav>
 
       <h2 className="text-2xl md:text-3xl font-semibold text-white mb-12 text-center">

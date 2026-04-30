@@ -85,6 +85,14 @@ export default function SuccessContent() {
         <Link href="/" className="text-xl sm:text-2xl font-bold cursor-pointer">
           PhotoBooth
         </Link>
+        <div className="flex items-center gap-6">
+          <Link href="/about" className="text-lg font-medium text-white hover:text-white/80 transition-colors">
+            About Us
+          </Link>
+          <Link href="/contact" className="text-lg font-medium text-white hover:text-white/80 transition-colors">
+            Contact Us
+          </Link>
+        </div>
       </nav>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full max-w-6xl">
         {gif && (

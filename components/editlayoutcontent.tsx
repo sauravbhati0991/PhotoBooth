@@ -383,6 +383,14 @@ export default function EditLayoutContent() {
         <Link href="/" className="text-xl sm:text-2xl font-bold cursor-pointer">
           PhotoBooth
         </Link>
+        <div className="flex items-center gap-6">
+          <Link href="/about" className="text-lg font-medium text-white hover:text-white/80 transition-colors">
+            About Us
+          </Link>
+          <Link href="/contact" className="text-lg font-medium text-white hover:text-white/80 transition-colors">
+            Contact Us
+          </Link>
+        </div>
       </nav>
 
       <h1 className="text-2xl sm:text-3xl font-bold mb-6 text-center">
