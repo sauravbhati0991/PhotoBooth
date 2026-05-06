@@ -366,12 +366,7 @@ export default function EditLayoutContent() {
             setSaveProgress(100); // Upload done
 
             router.push(
-              `/payment?title=${encodeURIComponent(title)}
-  &price=${price}
-  &gif=${encodeURIComponent(data.gifUrl)}
-  &img=${encodeURIComponent(data.imageUrl)}
-  &rows=${rows}
-  &cols=${cols}`,
+              `/payment?title=${encodeURIComponent(title)}&price=${price}&gif=${encodeURIComponent(data.gifUrl)}&img=${encodeURIComponent(data.imageUrl)}&rows=${rows}&cols=${cols}`,
             );
           } catch (err) {
             console.error("Upload failed", err);
