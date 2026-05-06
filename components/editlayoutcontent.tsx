@@ -31,7 +31,7 @@ export default function EditLayoutContent() {
     typeof window !== "undefined" ? window.innerHeight * 0.6 : 500;
 
   const CELL_SIZE = Math.min(
-    120,
+    100,
     Math.floor((maxHeight - PREVIEW_PADDING * 2 - GAP * (rows - 1)) / rows),
   );
 
@@ -109,7 +109,7 @@ export default function EditLayoutContent() {
 
           ctx.drawImage(video, sx, sy, minDim, minDim, 0, 0, minDim, minDim);
 
-          frames.push(canvas.toDataURL("image/jpeg", 1.0));
+          frames.push(canvas.toDataURL("image/jpeg", 0.8));
 
           await new Promise((res) => setTimeout(res, 250));
         }
@@ -271,7 +271,7 @@ export default function EditLayoutContent() {
           drawRoundedImage(ctx, img, x, y, CELL, CELL, 20);
         }
 
-        layoutFrames.push(canvas.toDataURL("image/jpeg", 1.0));
+        layoutFrames.push(canvas.toDataURL("image/jpeg", 0.7));
       }
 
       const imageCanvas = document.createElement("canvas");
@@ -311,7 +311,7 @@ export default function EditLayoutContent() {
         drawRoundedImage(imageCtx, img, x, y, CELL, CELL, 20);
       }
 
-      const finalImage = imageCanvas.toDataURL("image/png");
+      const finalImage = imageCanvas.toDataURL("image/jpeg", 0.7);
 
       // Scale down GIF generation to prevent incredibly slow processing and huge uploads
       const maxGifSize = 600;
@@ -351,6 +351,15 @@ export default function EditLayoutContent() {
                 image: finalImage,
               }),
             });
+
+            if (!res.ok) {
+              const errText = await res.text();
+              console.error(`Upload failed with status ${res.status}:`, errText);
+              alert(`Upload failed (${res.status}). The image may be too large. Please try again.`);
+              setSaving(false);
+              setSaveProgress(0);
+              return;
+            }
 
             const data = await res.json();
 
@@ -397,115 +406,21 @@ export default function EditLayoutContent() {
         Photobooth Capture
       </h1>
 
-      {/* Enlarged Capture Screen Section */}
-      <div className="w-full max-w-5xl flex flex-col items-center gap-6 mb-12">
-        <div className="relative w-full max-w-[500px] aspect-square rounded-3xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.3)] ring-8 ring-white/10 group">
-          <Webcam
-            ref={webcamRef}
-            screenshotFormat="image/jpeg"
-            className="w-full h-full object-cover transform scale-x-[-1]" // Balanced mirroring
-            videoConstraints={{
-              facingMode: "user",
-              width: { ideal: 1920 },
-              height: { ideal: 1080 }
-            }}
-            style={{ filter }}
-            onUserMediaError={(err) => {
-              console.error("Camera Error:", err);
-              if (typeof window !== "undefined" && window.location.protocol !== "https:" && window.location.hostname !== "localhost") {
-                setCamError("Camera requires HTTPS to work. Ensure your deployed site uses https://");
-              } else {
-                setCamError("Camera access denied or device not found. Please allow permissions in your browser.");
-              }
-            }}
-          />
+      {/* Main 3-column layout: Preview | Camera | Filters */}
+      <div className="w-full max-w-7xl flex flex-col lg:flex-row items-start gap-6 mb-8">
 
-          {camError && (
-            <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center text-center p-6 z-30">
-              <span className="text-red-400 text-4xl mb-4">⚠️</span>
-              <h3 className="text-xl font-bold text-white mb-2">Camera Unavailable</h3>
-              <p className="text-white/80">{camError}</p>
-            </div>
-          )}
-
-          {/* Countdown Overlay */}
-          {countdown !== null && (
-            <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
-              <div className="text-9xl font-black text-white drop-shadow-[0_0_20px_rgba(147,51,234,0.8)] animate-ping-once transition-all">
-                {countdown}
-              </div>
-            </div>
-          )}
-
-          {/* Overlay when capturing */}
-          {capturing && (
-            <div className="absolute inset-0 z-10 bg-black/50 backdrop-blur-sm flex items-center justify-center">
-              <div className="flex flex-col items-center gap-4">
-                <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
-                <p className="text-xl font-bold tracking-widest uppercase">Capturing Moments...</p>
-              </div>
-            </div>
-          )}
-
-          {/* Slot Selection Hint overlay if no cell selected */}
-          {selectedCell === null && !capturing && (
-            <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-              <p className="bg-white/90 text-purple-600 px-6 py-2 rounded-full font-bold shadow-lg">
-                Select a slot in the template below
-              </p>
-            </div>
-          )}
-        </div>
-
-        <div className="flex flex-wrap justify-center gap-4">
-          <button
-            onClick={() => handleCapture()}
-            disabled={capturing || selectedCell === null || isAutoCapturing || saving}
-            className={`px-10 py-4 rounded-2xl font-bold text-lg shadow-xl transform active:scale-95 transition-all duration-300 flex items-center gap-3
-              ${capturing || selectedCell === null || isAutoCapturing || saving
-                ? "bg-white/40 text-white/50 cursor-not-allowed scale-95"
-                : "bg-white text-purple-600 hover:bg-purple-50 hover:shadow-2xl cursor-pointer"
-              }`}
-          >
-            <div className={`w-3 h-3 rounded-full ${capturing && !isAutoCapturing ? "bg-red-500 animate-ping" : "bg-purple-600"}`}></div>
-            {capturing && !isAutoCapturing ? "Capturing..." : selectedCell === null ? "Select Slot Below" : "Snap Photo"}
-          </button>
-
-          <button
-            onClick={handleAutoCapture}
-            disabled={capturing || isAutoCapturing || saving}
-            className={`px-10 py-4 rounded-2xl font-bold text-lg shadow-xl transform active:scale-95 transition-all duration-300 flex items-center gap-3
-              ${capturing || isAutoCapturing || saving
-                ? "bg-purple-800/40 text-white/50 cursor-not-allowed scale-95"
-                : "bg-purple-600 text-white hover:bg-purple-700 hover:shadow-2xl cursor-pointer border border-white/20"
-              }`}
-          >
-            <div className={`w-3 h-3 rounded-full ${isAutoCapturing ? "bg-red-500 animate-pulse" : "bg-white"}`}></div>
-            {isAutoCapturing ? "Auto Sequence..." : "Capture All"}
-          </button>
-        </div>
-      </div>
-
-      <div
-        className={`grid gap-8 w-full max-w-6xl
-      ${isWidePreview ? "grid-cols-1 lg:grid-cols-2" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"}
-    `}
-      >
-        <div
-          className={`bg-white/20 backdrop-blur-lg p-8 rounded-3xl flex flex-col items-center shadow-xl
-        ${isWidePreview ? "lg:col-span-2" : "lg:col-span-2"}
-      `}
-        >
-          <div className="flex items-center justify-between w-full mb-6">
-            <h2 className="text-xl font-bold flex items-center gap-2">
+        {/* 1. Template Preview */}
+        <div className="bg-white/20 backdrop-blur-lg p-6 rounded-3xl flex flex-col items-center shadow-xl w-full lg:w-fit lg:min-w-[280px] lg:max-w-[480px] shrink-0">
+          <div className="flex items-center justify-between w-full mb-4">
+            <h2 className="text-lg font-bold flex items-center gap-2">
               <span className="w-2 h-6 bg-white rounded-full"></span>
               Template Preview
             </h2>
-            <p className="text-white/60 text-sm">{allFilled ? "Perfect! Ready to save." : "Tap a slot to select"}</p>
+            <p className="text-white/60 text-xs">{allFilled ? "Ready to save!" : "Tap a slot"}</p>
           </div>
 
-          <div className="w-full overflow-auto max-h-[60vh] custom-scrollbar rounded-xl">
-            <div className="min-w-max flex justify-center items-center py-4 px-2">
+          <div className="w-full overflow-auto max-h-[55vh] custom-scrollbar rounded-xl">
+            <div className="min-w-max flex justify-center items-center py-2 px-2">
               <div
                 className="rounded-2xl shadow-2xl flex items-center justify-center transition-transform hover:scale-[1.02] duration-500"
                 style={{
@@ -547,7 +462,6 @@ export default function EditLayoutContent() {
                           <span className="text-2xl font-bold group-hover:scale-125 transition-transform text-purple-200">+</span>
                           <span className="text-[10px] uppercase tracking-tighter opacity-0 group-hover:opacity-100 transition-opacity">Select</span>
                         </div>
-                        //jhv
                       )}
 
                       {selectedCell === i && !img && (
@@ -561,21 +475,141 @@ export default function EditLayoutContent() {
               </div>
             </div>
           </div>
+
+          {allFilled && (
+            <button
+              onClick={generateLayoutGif}
+              disabled={saving}
+              className={`relative overflow-hidden mt-6 px-8 py-3 rounded-xl font-semibold w-full transition-all
+                ${saving
+                  ? "bg-purple-900/50 text-white cursor-wait"
+                  : "bg-white text-purple-600 cursor-pointer hover:bg-white/90"
+                }`}
+            >
+              {saving && (
+                <>
+                  <div
+                    className="absolute left-0 top-0 bottom-0 bg-purple-500 transition-all duration-300 ease-out"
+                    style={{ width: `${saveProgress}%` }}
+                  ></div>
+                  {/* Wave/Shimmer effect layer */}
+                  <div
+                    className="absolute inset-0 animate-wave wave-bg z-0"
+                    style={{ opacity: saveProgress > 0 ? 1 : 0 }}
+                  ></div>
+                </>
+              )}
+
+              <span className="relative z-10 flex flex-col items-center justify-center">
+                {saving ? `Saving... ${saveProgress}%` : "Save Layout"}
+              </span>
+            </button>
+          )}
         </div>
 
-        <div className="bg-white/20 backdrop-blur-lg rounded-3xl p-8 flex flex-col gap-6 w-full shadow-xl">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="w-2 h-6 bg-white rounded-full"></span>
-            <h2 className="text-xl font-bold">Filters</h2>
+        {/* 2. Camera Screen */}
+        <div className="flex flex-col items-center gap-4 flex-1">
+          <div className="relative w-full max-w-[550px] aspect-square rounded-3xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.3)] ring-8 ring-white/10 group">
+            <Webcam
+              ref={webcamRef}
+              screenshotFormat="image/jpeg"
+              className="w-full h-full object-cover transform scale-x-[-1]"
+              videoConstraints={{
+                facingMode: "user",
+                width: { ideal: 1920 },
+                height: { ideal: 1080 }
+              }}
+              style={{ filter }}
+              onUserMediaError={(err) => {
+                console.error("Camera Error:", err);
+                if (typeof window !== "undefined" && window.location.protocol !== "https:" && window.location.hostname !== "localhost") {
+                  setCamError("Camera requires HTTPS to work. Ensure your deployed site uses https://");
+                } else {
+                  setCamError("Camera access denied or device not found. Please allow permissions in your browser.");
+                }
+              }}
+            />
+
+            {camError && (
+              <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center text-center p-4 z-30">
+                <span className="text-red-400 text-3xl mb-3">⚠️</span>
+                <h3 className="text-base font-bold text-white mb-1">Camera Unavailable</h3>
+                <p className="text-white/80 text-xs">{camError}</p>
+              </div>
+            )}
+
+            {/* Countdown Overlay */}
+            {countdown !== null && (
+              <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
+                <div className="text-8xl font-black text-white drop-shadow-[0_0_20px_rgba(147,51,234,0.8)] animate-ping-once transition-all">
+                  {countdown}
+                </div>
+              </div>
+            )}
+
+            {/* Overlay when capturing */}
+            {capturing && (
+              <div className="absolute inset-0 z-10 bg-black/50 backdrop-blur-sm flex items-center justify-center">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-10 h-10 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <p className="text-base font-bold tracking-widest uppercase">Capturing...</p>
+                </div>
+              </div>
+            )}
+
+            {/* Slot Selection Hint overlay */}
+            {selectedCell === null && !capturing && (
+              <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <p className="bg-white/90 text-purple-600 px-4 py-1.5 rounded-full font-bold shadow-lg text-sm">
+                  Select a slot first
+                </p>
+              </div>
+            )}
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="flex flex-col gap-3 w-full max-w-[550px]">
+            <button
+              onClick={() => handleCapture()}
+              disabled={capturing || selectedCell === null || isAutoCapturing || saving}
+              className={`px-6 py-3 rounded-2xl font-bold text-base shadow-xl transform active:scale-95 transition-all duration-300 flex items-center justify-center gap-2
+                ${capturing || selectedCell === null || isAutoCapturing || saving
+                  ? "bg-white/40 text-white/50 cursor-not-allowed scale-95"
+                  : "bg-white text-purple-600 hover:bg-purple-50 hover:shadow-2xl cursor-pointer"
+                }`}
+            >
+              <div className={`w-3 h-3 rounded-full ${capturing && !isAutoCapturing ? "bg-red-500 animate-ping" : "bg-purple-600"}`}></div>
+              {capturing && !isAutoCapturing ? "Capturing..." : selectedCell === null ? "Select Slot" : "Snap Photo"}
+            </button>
+
+            <button
+              onClick={handleAutoCapture}
+              disabled={capturing || isAutoCapturing || saving}
+              className={`px-6 py-3 rounded-2xl font-bold text-base shadow-xl transform active:scale-95 transition-all duration-300 flex items-center justify-center gap-2
+                ${capturing || isAutoCapturing || saving
+                  ? "bg-purple-800/40 text-white/50 cursor-not-allowed scale-95"
+                  : "bg-purple-600 text-white hover:bg-purple-700 hover:shadow-2xl cursor-pointer border border-white/20"
+                }`}
+            >
+              <div className={`w-3 h-3 rounded-full ${isAutoCapturing ? "bg-red-500 animate-pulse" : "bg-white"}`}></div>
+              {isAutoCapturing ? "Auto Sequence..." : "Capture All"}
+            </button>
+          </div>
+        </div>
+
+        {/* 3. Filters */}
+        <div className="bg-white/20 backdrop-blur-lg rounded-3xl p-6 flex flex-col gap-4 shadow-xl w-full lg:w-[180px] shrink-0">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="w-2 h-6 bg-white rounded-full"></span>
+            <h2 className="text-lg font-bold">Filters</h2>
+          </div>
+
+          <div className="flex flex-col gap-2">
             {filters.map((f) => (
               <button
                 key={f.value}
                 onClick={() => setFilter(f.value)}
                 disabled={saving}
-                className={`px-4 py-3 text-sm rounded-2xl transition-all duration-300 font-medium ${filter === f.value
+                className={`px-3 py-2.5 text-sm rounded-xl transition-all duration-300 font-medium text-center ${filter === f.value
                   ? "bg-white text-purple-600 shadow-lg scale-105"
                   : "bg-white/10 hover:bg-white/20 text-white"
                   } ${saving ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
@@ -585,43 +619,14 @@ export default function EditLayoutContent() {
             ))}
           </div>
 
-          <div className="mt-4 p-4 bg-purple-900/20 rounded-2xl border border-white/10">
-            <p className="text-xs text-white/60 text-center italic">
-              Filters affect both the live preview and the final capture.
+          <div className="mt-2 p-3 bg-purple-900/20 rounded-xl border border-white/10">
+            <p className="text-[10px] text-white/60 text-center italic">
+              Filters affect preview and capture.
             </p>
           </div>
         </div>
+
       </div>
-
-      {allFilled && (
-        <button
-          onClick={generateLayoutGif}
-          disabled={saving}
-          className={`relative overflow-hidden mt-8 px-8 py-3 rounded-xl font-semibold w-full max-w-[300px] transition-all
-    ${saving
-              ? "bg-purple-900/50 text-white cursor-wait"
-              : "bg-white text-purple-600 cursor-pointer hover:bg-white/90"
-            }`}
-        >
-          {saving && (
-            <>
-              <div
-                className="absolute left-0 top-0 bottom-0 bg-purple-500 transition-all duration-300 ease-out"
-                style={{ width: `${saveProgress}%` }}
-              ></div>
-              {/* Wave/Shimmer effect layer */}
-              <div
-                className="absolute inset-0 animate-wave wave-bg z-0"
-                style={{ opacity: saveProgress > 0 ? 1 : 0 }}
-              ></div>
-            </>
-          )}
-
-          <span className="relative z-10 flex flex-col items-center justify-center">
-            {saving ? `Saving... ${saveProgress}%` : "Save Layout"}
-          </span>
-        </button>
-      )}
     </div>
   );
 }
