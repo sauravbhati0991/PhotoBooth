@@ -22,6 +22,8 @@ export default function EditLayoutContent() {
   const bgType = searchParams.get("bgType");
   const bgValue = searchParams.get("bgValue") ?? "#60a5fa";
 
+  //a
+
   const webcamRef = useRef<Webcam>(null);
 
   const isVerticalLayout = rows > cols;
@@ -92,7 +94,7 @@ export default function EditLayoutContent() {
     if (allFilled && !saving && !capturing && !isAutoCapturing) {
       firstTimeout = setTimeout(() => {
         speak("Your layout is ready. Select your filter and save.");
-        
+
         reminderInterval = setInterval(() => {
           if (!saving) {
             speak("Your layout is ready. Please click save layout.");
@@ -439,9 +441,9 @@ export default function EditLayoutContent() {
           PhotoBooth
         </Link>
         <div className="flex items-center gap-6">
-          <button 
-            onClick={toggleMute} 
-            className="p-2 rounded-full hover:bg-white/20 transition-colors flex items-center justify-center" 
+          <button
+            onClick={toggleMute}
+            className="p-2 rounded-full hover:bg-white/20 transition-colors flex items-center justify-center"
             title={isMuted ? "Unmute Voice" : "Mute Voice"}
           >
             {isMuted ? <VolumeX size={24} /> : <Volume2 size={24} />}
