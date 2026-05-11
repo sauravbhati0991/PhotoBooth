@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Volume2, VolumeX } from "lucide-react";
+import { useVoicePrompt } from "@/hooks/useVoicePrompt";
 
 type Template = {
   _id: string;
@@ -45,6 +46,30 @@ export default function GridCardsSection() {
     fetchTemplates();
   }, []);
 
+  const { speak, isMuted, toggleMute } = useVoicePrompt();
+
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    let intervalId: NodeJS.Timeout;
+
+    if (!loading && templates.length > 0) {
+      // Add a slight delay to allow interaction or voice loading
+      timeoutId = setTimeout(() => {
+        speak("Select your templates");
+
+        // Repeat the prompt every 10 seconds if no template is selected
+        intervalId = setInterval(() => {
+          speak("Please select your templates");
+        }, 10000);
+      }, 500);
+    }
+
+    return () => {
+      clearTimeout(timeoutId);
+      clearInterval(intervalId);
+    };
+  }, [loading, templates, speak]);
+
   const scroll = (direction: "left" | "right") => {
     if (!scrollRef.current) return;
 
@@ -67,6 +92,13 @@ export default function GridCardsSection() {
           PhotoBooth
         </Link>
         <div className="flex items-center gap-6">
+          <button 
+            onClick={toggleMute} 
+            className="p-2 rounded-full hover:bg-white/20 transition-colors flex items-center justify-center text-white" 
+            title={isMuted ? "Unmute Voice" : "Mute Voice"}
+          >
+            {isMuted ? <VolumeX size={24} /> : <Volume2 size={24} />}
+          </button>
           <Link href="/about" className="text-lg font-medium text-white hover:text-white/80 transition-colors">
             About Us
           </Link>

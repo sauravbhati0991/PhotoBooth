@@ -1,10 +1,12 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { useState, useRef, useCallback, useMemo } from "react";
+import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import Webcam from "react-webcam";
 import gifshot from "gifshot";
 import Link from "next/link";
+import { Volume2, VolumeX } from "lucide-react";
+import { useVoicePrompt } from "@/hooks/useVoicePrompt";
 
 type GifResult = { error: boolean; image: string };
 
@@ -64,6 +66,8 @@ export default function EditLayoutContent() {
   const [isAutoCapturing, setIsAutoCapturing] = useState(false);
   const [camError, setCamError] = useState<string | null>(null);
 
+  const { speak, isMuted, toggleMute } = useVoicePrompt();
+
   const filters = [
     { name: "Original", value: "none" },
     { name: "Black & White", value: "grayscale(1)" },
@@ -80,12 +84,46 @@ export default function EditLayoutContent() {
 
   const allFilled = useMemo(() => staticImages.every((img) => img !== ""), [staticImages]);
 
+  // "Layout is ready" voice and reminder
+  useEffect(() => {
+    let firstTimeout: NodeJS.Timeout;
+    let reminderInterval: NodeJS.Timeout;
+
+    if (allFilled && !saving && !capturing && !isAutoCapturing) {
+      firstTimeout = setTimeout(() => {
+        speak("Your layout is ready. Select your filter and save.");
+        
+        reminderInterval = setInterval(() => {
+          if (!saving) {
+            speak("Your layout is ready. Please click save layout.");
+          }
+        }, 15000);
+      }, 1500); // Delay to not overlap with "Great!"
+    }
+
+    return () => {
+      clearTimeout(firstTimeout);
+      clearInterval(reminderInterval);
+    };
+  }, [allFilled, saving, capturing, isAutoCapturing, speak]);
+
   const handleCapture = useCallback(async (targetIndex?: number) => {
     const activeIndex = targetIndex !== undefined ? targetIndex : selectedCell;
     if (!webcamRef.current || activeIndex === null) return;
 
     const video = webcamRef.current.video;
     if (!video) return;
+
+    if (targetIndex === undefined) {
+      // Manual single photo capture countdown
+      for (let c = 3; c > 0; c--) {
+        setCountdown(c);
+        speak(c.toString());
+        await delay(1000);
+      }
+      setCountdown(null);
+      speak("Cheese!");
+    }
 
     setCapturing(true);
 
@@ -158,7 +196,7 @@ export default function EditLayoutContent() {
         resolve();
       }
     });
-  }, [selectedCell, filter]);
+  }, [selectedCell, filter, speak]);
 
   const handleAutoCapture = useCallback(async () => {
     if (isAutoCapturing) return;
@@ -168,13 +206,26 @@ export default function EditLayoutContent() {
     for (let i = 0; i < count; i++) {
       setSelectedCell(i);
 
+      if (i === count - 1) {
+        speak("Last one!");
+      }
+
       // Start Countdown
       for (let c = 3; c > 0; c--) {
         setCountdown(c);
+        speak(c.toString());
         await delay(1000);
       }
 
       setCountdown(null); // Clear countdown for snapshot
+
+      if (i === count - 1) {
+        speak("Great!");
+      } else if (i % 2 === 0) {
+        speak("Cheese!");
+      } else {
+        speak("Smile!");
+      }
 
       await handleCapture(i);
 
@@ -184,7 +235,7 @@ export default function EditLayoutContent() {
 
     setIsAutoCapturing(false);
     setSelectedCell(null);
-  }, [count, handleCapture, isAutoCapturing]);
+  }, [count, handleCapture, isAutoCapturing, speak]);
 
   function drawRoundedImage(
     ctx: CanvasRenderingContext2D,
@@ -388,6 +439,13 @@ export default function EditLayoutContent() {
           PhotoBooth
         </Link>
         <div className="flex items-center gap-6">
+          <button 
+            onClick={toggleMute} 
+            className="p-2 rounded-full hover:bg-white/20 transition-colors flex items-center justify-center" 
+            title={isMuted ? "Unmute Voice" : "Mute Voice"}
+          >
+            {isMuted ? <VolumeX size={24} /> : <Volume2 size={24} />}
+          </button>
           <Link href="/about" className="text-lg font-medium text-white hover:text-white/80 transition-colors">
             About Us
           </Link>
