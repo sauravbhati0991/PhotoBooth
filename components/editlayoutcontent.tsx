@@ -276,13 +276,35 @@ export default function EditLayoutContent() {
     setSaveProgress(0);
 
     try {
-      const FRAME_COUNT = 6;
+      const FRAME_COUNT = count;
       const CELL = 1080;
       const GAP = 60;
       const PADDING = 120;
 
       const canvasWidth = cols * CELL + GAP * (cols - 1) + PADDING * 2;
       const canvasHeight = rows * CELL + GAP * (rows - 1) + PADDING * 2;
+
+      // OPTIMIZATION: Pre-load background image
+      let bgImageElement: HTMLImageElement | null = null;
+      if (bgType === "image") {
+        bgImageElement = new Image();
+        bgImageElement.crossOrigin = "anonymous";
+        bgImageElement.src = bgValue;
+        await new Promise((r) => (bgImageElement!.onload = r));
+      }
+
+      // OPTIMIZATION: Pre-load all cell images
+      const loadedStaticImages: (HTMLImageElement | null)[] = [];
+      for (let f = 0; f < FRAME_COUNT; f++) {
+        if (staticImages[f]) {
+          const img = new Image();
+          img.src = staticImages[f];
+          await new Promise((r) => (img.onload = r));
+          loadedStaticImages[f] = img;
+        } else {
+          loadedStaticImages[f] = null;
+        }
+      }
 
       const layoutFrames: string[] = [];
 
@@ -294,12 +316,8 @@ export default function EditLayoutContent() {
         const ctx = canvas.getContext("2d");
         if (!ctx) continue;
 
-        if (bgType === "image") {
-          const bg = new Image();
-          bg.crossOrigin = "anonymous";
-          bg.src = bgValue;
-          await new Promise((r) => (bg.onload = r));
-          ctx.drawImage(bg, 0, 0, canvasWidth, canvasHeight);
+        if (bgType === "image" && bgImageElement) {
+          ctx.drawImage(bgImageElement, 0, 0, canvasWidth, canvasHeight);
         } else {
           ctx.fillStyle = bgValue;
           ctx.fillRect(0, 0, canvasWidth, canvasHeight);
@@ -307,14 +325,10 @@ export default function EditLayoutContent() {
 
         ctx.filter = filter;
 
-        for (let i = 0; i < framesList.length; i++) {
-          const frame = framesList[i]?.[f];
-          if (!frame) continue;
+        const img = loadedStaticImages[f];
+        if (!img) continue;
 
-          const img = new Image();
-          img.src = frame;
-          await new Promise((r) => (img.onload = r));
-
+        for (let i = 0; i < count; i++) {
           const row = Math.floor(i / cols);
           const col = i % cols;
 
@@ -334,12 +348,8 @@ export default function EditLayoutContent() {
       const imageCtx = imageCanvas.getContext("2d");
       if (!imageCtx) return;
 
-      if (bgType === "image") {
-        const bg = new Image();
-        bg.crossOrigin = "anonymous";
-        bg.src = bgValue;
-        await new Promise((r) => (bg.onload = r));
-        imageCtx.drawImage(bg, 0, 0, canvasWidth, canvasHeight);
+      if (bgType === "image" && bgImageElement) {
+        imageCtx.drawImage(bgImageElement, 0, 0, canvasWidth, canvasHeight);
       } else {
         imageCtx.fillStyle = bgValue;
         imageCtx.fillRect(0, 0, canvasWidth, canvasHeight);
@@ -347,13 +357,9 @@ export default function EditLayoutContent() {
 
       imageCtx.filter = filter;
 
-      for (let i = 0; i < staticImages.length; i++) {
-        const frame = staticImages[i];
-        if (!frame) continue;
-
-        const img = new Image();
-        img.src = frame;
-        await new Promise((r) => (img.onload = r));
+      for (let i = 0; i < loadedStaticImages.length; i++) {
+        const img = loadedStaticImages[i];
+        if (!img) continue;
 
         const row = Math.floor(i / cols);
         const col = i % cols;
@@ -377,7 +383,7 @@ export default function EditLayoutContent() {
       gifshot.createGIF(
         {
           images: layoutFrames,
-          interval: 0.25,
+          interval: 1,
           gifWidth: gifW,
           gifHeight: gifH,
           numWorkers: 4,
