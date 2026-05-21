@@ -11,6 +11,7 @@ export default function SuccessContent() {
 
   const gif = searchParams.get("gif");
   const img = searchParams.get("img");
+  const orderId = searchParams.get("orderId");
 
   const rows = Number(searchParams.get("rows")) || 2;
   const cols = Number(searchParams.get("cols")) || 2;
@@ -128,6 +129,13 @@ export default function SuccessContent() {
       <h1 className="text-2xl sm:text-4xl font-bold mb-3 text-center">
         🎉 Payment Successful
       </h1>
+
+      {orderId && (
+        <div className="bg-white/20 backdrop-blur-lg rounded-2xl px-6 py-3 mb-4">
+          <p className="text-white/70 text-sm text-center">Order ID</p>
+          <p className="text-xl font-bold text-center tracking-wider">{orderId}</p>
+        </div>
+      )}
 
       <p className="text-white/80 mb-8 text-center">
         Your photobooth is ready!

@@ -30,22 +30,39 @@ export default function GridCardsSectionAdmin() {
       </nav>
 
       <div className="max-w-6xl mx-auto px-6 pb-20">
-        <h1 className="text-3xl font-bold text-center mb-10">Layout Builder</h1>
+        <h1 className="text-3xl font-bold text-center mb-10">Admin Dashboard</h1>
 
-        <div className="flex gap-10 justify-center">
-          <button
-            onClick={() => router.push("/admin/newLayout")}
-            className="bg-white text-purple-600 hover:scale-105 cursor-pointer px-6 py-3 rounded-xl shadow-lg transition"
-          >
-            Add Layout
-          </button>
+        <div className="space-y-10">
+          <div>
+            <h2 className="text-xl font-semibold mb-4 text-white/90">Layout Builder</h2>
+            <div className="flex gap-6 justify-center">
+              <button
+                onClick={() => router.push("/admin/newLayout")}
+                className="bg-white text-purple-600 hover:scale-105 cursor-pointer px-6 py-3 rounded-xl shadow-lg transition"
+              >
+                Add Layout
+              </button>
 
-          <button
-            onClick={() => router.push("/admin/editLayout")}
-            className="bg-white text-purple-600 hover:scale-105 cursor-pointer px-6 py-3 rounded-xl shadow-lg transition"
-          >
-            Edit Layout
-          </button>
+              <button
+                onClick={() => router.push("/admin/editLayout")}
+                className="bg-white text-purple-600 hover:scale-105 cursor-pointer px-6 py-3 rounded-xl shadow-lg transition"
+              >
+                Edit Layout
+              </button>
+            </div>
+          </div>
+
+          <div className="border-t border-white/20 pt-8">
+            <h2 className="text-xl font-semibold mb-4 text-white/90">Payment Management</h2>
+            <div className="flex gap-6 justify-center">
+              <button
+                onClick={() => router.push("/admin/payments")}
+                className="bg-white text-purple-600 hover:scale-105 cursor-pointer px-6 py-3 rounded-xl shadow-lg transition flex items-center gap-2"
+              >
+                Payment Tracker
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

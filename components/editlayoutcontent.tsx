@@ -173,8 +173,8 @@ export default function EditLayoutContent() {
           {
             images: frames,
             interval: 0.25,
-            gifWidth: 400,
-            gifHeight: 400,
+            gifWidth: 500,
+            gifHeight: 500,
             numWorkers: 4,
             quality: 5,
           },
@@ -324,7 +324,7 @@ export default function EditLayoutContent() {
           drawRoundedImage(ctx, img, x, y, CELL, CELL, 20);
         }
 
-        layoutFrames.push(canvas.toDataURL("image/jpeg", 0.7));
+        layoutFrames.push(canvas.toDataURL("image/jpeg", 0.85));
       }
 
       const imageCanvas = document.createElement("canvas");
@@ -364,10 +364,12 @@ export default function EditLayoutContent() {
         drawRoundedImage(imageCtx, img, x, y, CELL, CELL, 20);
       }
 
-      const finalImage = imageCanvas.toDataURL("image/jpeg", 0.7);
+      // Generate static image with adaptive quality to stay under 25MB total
+      let imageQuality = 0.85;
+      let finalImage = imageCanvas.toDataURL("image/jpeg", imageQuality);
 
-      // Scale down GIF generation to prevent incredibly slow processing and huge uploads
-      const maxGifSize = 600;
+      // Scale up GIF resolution for better quality (was 600, now 1000)
+      const maxGifSize = 1000;
       const gifRatio = Math.min(1, maxGifSize / Math.max(canvasWidth, canvasHeight));
       const gifW = Math.round(canvasWidth * gifRatio);
       const gifH = Math.round(canvasHeight * gifRatio);
@@ -379,9 +381,9 @@ export default function EditLayoutContent() {
           gifWidth: gifW,
           gifHeight: gifH,
           numWorkers: 4,
-          quality: 10,
+          quality: 3, // Lower number = better quality in gifshot (was 10)
           progressCallback: (captureProgress: number) => {
-            setSaveProgress(Math.floor(captureProgress * 80)); // 0-80% for gif creation
+            setSaveProgress(Math.floor(captureProgress * 70)); // 0-70% for gif creation
           }
         },
         async (obj: GifResult) => {
@@ -391,9 +393,36 @@ export default function EditLayoutContent() {
             return;
           }
 
-          setSaveProgress(85); // GIF done, preparing upload
+          setSaveProgress(75); // GIF done, checking sizes
 
           try {
+            // Estimate base64 payload sizes (base64 is ~4/3 of binary)
+            const gifSizeBytes = Math.ceil((obj.image.length - (obj.image.indexOf(',') + 1)) * 0.75);
+            let imageSizeBytes = Math.ceil((finalImage.length - (finalImage.indexOf(',') + 1)) * 0.75);
+            let totalSizeMB = (gifSizeBytes + imageSizeBytes) / (1024 * 1024);
+
+            console.log(`GIF size: ${(gifSizeBytes / (1024 * 1024)).toFixed(2)}MB, Image size: ${(imageSizeBytes / (1024 * 1024)).toFixed(2)}MB, Total: ${totalSizeMB.toFixed(2)}MB`);
+
+            // If total exceeds 20MB (safe margin under 25MB Nginx limit),
+            // progressively reduce image JPEG quality
+            const MAX_UPLOAD_MB = 20;
+            while (totalSizeMB > MAX_UPLOAD_MB && imageQuality > 0.3) {
+              imageQuality -= 0.1;
+              console.log(`Total ${totalSizeMB.toFixed(2)}MB exceeds ${MAX_UPLOAD_MB}MB, re-compressing image at quality ${imageQuality.toFixed(1)}`);
+              finalImage = imageCanvas.toDataURL("image/jpeg", imageQuality);
+              imageSizeBytes = Math.ceil((finalImage.length - (finalImage.indexOf(',') + 1)) * 0.75);
+              totalSizeMB = (gifSizeBytes + imageSizeBytes) / (1024 * 1024);
+            }
+
+            if (totalSizeMB > MAX_UPLOAD_MB) {
+              alert(`Upload size (${totalSizeMB.toFixed(1)}MB) is too large. Please try a smaller layout.`);
+              setSaving(false);
+              setSaveProgress(0);
+              return;
+            }
+
+            setSaveProgress(85); // Size OK, uploading
+
             const res = await fetch("/api/upload", {
               method: "POST",
               headers: {
@@ -402,6 +431,11 @@ export default function EditLayoutContent() {
               body: JSON.stringify({
                 gif: obj.image,
                 image: finalImage,
+                layoutTitle: title,
+                rows,
+                cols,
+                amount: price,
+                copies: 1,
               }),
             });
 
@@ -419,7 +453,7 @@ export default function EditLayoutContent() {
             setSaveProgress(100); // Upload done
 
             router.push(
-              `/payment?title=${encodeURIComponent(title)}&price=${price}&gif=${encodeURIComponent(data.gifUrl)}&img=${encodeURIComponent(data.imageUrl)}&rows=${rows}&cols=${cols}`,
+              `/payment?title=${encodeURIComponent(title)}&price=${price}&gif=${encodeURIComponent(data.gifUrl)}&img=${encodeURIComponent(data.imageUrl)}&rows=${rows}&cols=${cols}&orderId=${encodeURIComponent(data.orderId)}`,
             );
           } catch (err) {
             console.error("Upload failed", err);
