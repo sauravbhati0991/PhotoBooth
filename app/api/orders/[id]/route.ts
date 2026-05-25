@@ -36,8 +36,6 @@ export async function PATCH(
     const client = await clientPromise;
     const db = client.db("photobooth");
 
-    // Only allow updating specific fields
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const updateFields: Record<string, any> = {};
 
     if (body.paymentStatus) updateFields.paymentStatus = body.paymentStatus;
@@ -74,3 +72,29 @@ export async function PATCH(
     );
   }
 }
+
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const client = await clientPromise;
+    const db = client.db("photobooth");
+
+    const result = await db.collection("orders").deleteOne({ orderId: id });
+
+    if (result.deletedCount === 0) {
+      return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ message: "Order deleted successfully" });
+  } catch (error) {
+    console.error("DELETE order error:", error);
+    return NextResponse.json(
+      { error: "Failed to delete order" },
+      { status: 500 }
+    );
+  }
+}
+

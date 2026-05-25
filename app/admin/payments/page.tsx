@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import {
   DollarSign,
   CreditCard,
@@ -13,11 +12,11 @@ import {
   Plus,
   X,
   ChevronDown,
-  ArrowLeft,
   TrendingUp,
   Calendar,
   BarChart3,
   PieChart,
+  Trash2,
 } from "lucide-react";
 
 type Order = {
@@ -43,20 +42,18 @@ export default function PaymentsPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Filters
   const [filterType, setFilterType] = useState<string>("");
   const [filterStatus, setFilterStatus] = useState<string>("");
 
-  // Modal states
   const [previewOrder, setPreviewOrder] = useState<Order | null>(null);
   const [showCashModal, setShowCashModal] = useState(false);
+  const [deleteOrder, setDeleteOrder] = useState<Order | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  // Cash payment form (simplified — just amount & layout)
   const [cashAmount, setCashAmount] = useState("");
   const [cashLayout, setCashLayout] = useState("");
   const [cashSaving, setCashSaving] = useState(false);
 
-  // Active tab
   const [activeTab, setActiveTab] = useState<"analytics" | "orders">("analytics");
 
   const fetchOrders = useCallback(async () => {
@@ -83,34 +80,28 @@ export default function PaymentsPage() {
     fetchOrders();
   }, [fetchOrders]);
 
-  // ──────────────────── Analytics Computations ────────────────────
 
   const analytics = useMemo(() => {
     const completed = orders.filter((o) => o.paymentStatus === "completed");
     const now = new Date();
 
-    // Today
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const todayOrders = completed.filter((o) => new Date(o.createdAt) >= todayStart);
     const todayRevenue = todayOrders.reduce((s, o) => s + (o.amount || 0), 0);
 
-    // This week (Monday start)
     const dayOfWeek = now.getDay();
     const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
     const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - mondayOffset);
     const weekOrders = completed.filter((o) => new Date(o.createdAt) >= weekStart);
     const weekRevenue = weekOrders.reduce((s, o) => s + (o.amount || 0), 0);
 
-    // This month
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const monthOrders = completed.filter((o) => new Date(o.createdAt) >= monthStart);
     const monthRevenue = monthOrders.reduce((s, o) => s + (o.amount || 0), 0);
 
-    // All time
     const totalRevenue = completed.reduce((s, o) => s + (o.amount || 0), 0);
     const totalOrders = orders.length;
 
-    // By type
     const onlineCompleted = completed.filter((o) => o.paymentType === "online");
     const cashCompleted = completed.filter((o) => o.paymentType === "cash");
     const onlineRevenue = onlineCompleted.reduce((s, o) => s + (o.amount || 0), 0);
@@ -121,10 +112,8 @@ export default function PaymentsPage() {
       .filter((o) => o.paymentStatus === "pending")
       .reduce((s, o) => s + (o.amount || 0), 0);
 
-    // Average order value
     const avgOrderValue = completed.length > 0 ? Math.round(totalRevenue / completed.length) : 0;
 
-    // Daily revenue for last 7 days (for bar chart)
     const last7Days: { label: string; revenue: number; count: number }[] = [];
     for (let i = 6; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
@@ -141,7 +130,6 @@ export default function PaymentsPage() {
     }
     const maxDailyRevenue = Math.max(...last7Days.map((d) => d.revenue), 1);
 
-    // Top layouts
     const layoutMap: Record<string, { count: number; revenue: number }> = {};
     completed.forEach((o) => {
       const key = o.layoutTitle || "Unknown";
@@ -175,7 +163,6 @@ export default function PaymentsPage() {
     };
   }, [orders]);
 
-  // ──────────────────── Handlers ────────────────────
 
   const handleMarkPaid = async (orderId: string) => {
     try {
@@ -225,6 +212,27 @@ export default function PaymentsPage() {
     }
   };
 
+  const handleDeleteOrder = async (orderId: string) => {
+    try {
+      setIsDeleting(true);
+      const res = await fetch(`/api/orders/${orderId}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setDeleteOrder(null);
+        fetchOrders();
+      } else {
+        const data = await res.json();
+        alert(data.error || "Failed to delete order");
+      }
+    } catch (error) {
+      console.error("Failed to delete order:", error);
+      alert("Failed to delete order");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString("en-IN", {
       day: "2-digit",
@@ -251,7 +259,6 @@ export default function PaymentsPage() {
         <h1 className="text-3xl font-bold text-center mb-2">Payment Tracker</h1>
         <p className="text-center text-white/60 mb-8">Track revenue, manage payments, and view analytics</p>
 
-        {/* Tab Switcher */}
         <div className="flex justify-center gap-2 mb-8">
           <button
             onClick={() => setActiveTab("analytics")}
@@ -275,10 +282,8 @@ export default function PaymentsPage() {
           </button>
         </div>
 
-        {/* ═══════════════════ ANALYTICS TAB ═══════════════════ */}
         {activeTab === "analytics" && (
           <div className="space-y-6">
-            {/* Revenue Overview Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="bg-white/20 backdrop-blur-lg rounded-2xl p-5 shadow-xl border border-white/10">
                 <div className="flex items-center gap-3 mb-3">
@@ -325,7 +330,6 @@ export default function PaymentsPage() {
               </div>
             </div>
 
-            {/* Revenue Chart + Payment Breakdown */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Daily Revenue Bar Chart */}
               <div className="lg:col-span-2 bg-white/20 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-white/10">
@@ -362,7 +366,6 @@ export default function PaymentsPage() {
                 </div>
               </div>
 
-              {/* Payment Type Breakdown */}
               <div className="bg-white/20 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-white/10">
                 <h3 className="text-lg font-bold mb-1 flex items-center gap-2">
                   <PieChart size={20} />
@@ -370,9 +373,7 @@ export default function PaymentsPage() {
                 </h3>
                 <p className="text-white/50 text-xs mb-6">By payment method</p>
 
-                {/* Visual pie-like display */}
                 <div className="space-y-5">
-                  {/* Online */}
                   <div>
                     <div className="flex justify-between items-center mb-2">
                       <div className="flex items-center gap-2">
@@ -546,6 +547,7 @@ export default function PaymentsPage() {
                         <th className="px-5 py-4 text-sm font-semibold text-white/80">Type</th>
                         <th className="px-5 py-4 text-sm font-semibold text-white/80">Status</th>
                         <th className="px-5 py-4 text-sm font-semibold text-white/80">Date</th>
+                        <th className="px-5 py-4 text-sm font-semibold text-white/80">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -606,27 +608,37 @@ export default function PaymentsPage() {
                             {formatDate(order.createdAt)}
                           </td>
                           <td className="px-5 py-4">
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-col gap-1.5 w-[100px]">
                               {(order.gifUrl || order.imageUrl) && (
                                 <button
                                   onClick={() => setPreviewOrder(order)}
-                                  className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition cursor-pointer"
+                                  className="w-full px-2 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center justify-center gap-1"
                                   title="Preview"
                                 >
-                                  <Eye size={16} />
+                                  <Eye size={14} />
+                                  Preview
                                 </button>
                               )}
 
                               {order.paymentStatus === "pending" && (
                                 <button
                                   onClick={() => handleMarkPaid(order.orderId)}
-                                  className="px-3 py-1.5 bg-emerald-500/30 hover:bg-emerald-500/50 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1"
+                                  className="w-full px-2 py-1.5 bg-emerald-500/30 hover:bg-emerald-500/50 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center justify-center gap-1"
                                   title="Mark as Paid (Cash)"
                                 >
                                   <Check size={14} />
                                   Mark Paid
                                 </button>
                               )}
+
+                              <button
+                                onClick={() => setDeleteOrder(order)}
+                                className="w-full px-2 py-1.5 bg-red-500/20 hover:bg-red-500/40 text-red-200 hover:text-white rounded-lg text-xs font-semibold transition cursor-pointer flex items-center justify-center gap-1 shrink-0"
+                                title="Delete Order"
+                              >
+                                <Trash2 size={14} />
+                                Delete
+                              </button>
                             </div>
                           </td>
                         </tr>
@@ -796,6 +808,78 @@ export default function PaymentsPage() {
                   <>
                     <Banknote size={18} />
                     Add Payment
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteOrder && (
+        <div
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setDeleteOrder(null)}
+        >
+          <div
+            className="bg-gradient-to-br from-purple-700 to-pink-600 rounded-3xl shadow-2xl w-full max-w-md p-6 border border-white/20 transform transition-all duration-300 scale-100"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold flex items-center gap-2 text-red-200">
+                <Trash2 size={22} />
+                Delete Order
+              </h2>
+              <button
+                onClick={() => setDeleteOrder(null)}
+                className="p-2 bg-white/20 hover:bg-white/30 rounded-xl transition cursor-pointer"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="space-y-4 text-white/90">
+              <p>
+                Are you sure you want to permanently delete this order? This action cannot be undone.
+              </p>
+              <div className="bg-white/10 rounded-xl p-4 space-y-2">
+                <div>
+                  <span className="text-white/60 text-xs block">Order ID</span>
+                  <span className="font-mono text-sm font-semibold">{deleteOrder.orderId}</span>
+                </div>
+                <div>
+                  <span className="text-white/60 text-xs block">Layout</span>
+                  <span className="font-semibold">{deleteOrder.layoutTitle}</span>
+                </div>
+                <div>
+                  <span className="text-white/60 text-xs block">Amount</span>
+                  <span className="font-semibold">{deleteOrder.amount === 0 ? "Free" : `₹${deleteOrder.amount}`}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-4 mt-8">
+              <button
+                onClick={() => setDeleteOrder(null)}
+                className="flex-1 py-3 bg-white/10 hover:bg-white/25 text-white font-semibold rounded-xl transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDeleteOrder(deleteOrder.orderId)}
+                disabled={isDeleting}
+                className="flex-1 py-3 bg-red-500 hover:bg-red-600 disabled:bg-red-500/50 text-white font-semibold rounded-xl shadow-lg transition cursor-pointer flex items-center justify-center gap-2"
+              >
+                {isDeleting ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={18} />
+                    Confirm Delete
                   </>
                 )}
               </button>
