@@ -370,15 +370,29 @@ export default function EditLayoutContent() {
         drawRoundedImage(imageCtx, img, x, y, CELL, CELL, 20);
       }
 
-      // Generate static image with adaptive quality to stay under 25MB total
-      let imageQuality = 0.85;
-      let finalImage = imageCanvas.toDataURL("image/jpeg", imageQuality);
+      // Target output resolution: fit within 1300x2100px bounding box
+      const TARGET_W = 1300;
+      const TARGET_H = 2100;
+      const outputRatio = Math.min(1, TARGET_W / canvasWidth, TARGET_H / canvasHeight);
+      const outW = Math.round(canvasWidth * outputRatio);
+      const outH = Math.round(canvasHeight * outputRatio);
 
-      // Scale up GIF resolution for better quality (was 600, now 1000)
-      const maxGifSize = 1000;
-      const gifRatio = Math.min(1, maxGifSize / Math.max(canvasWidth, canvasHeight));
-      const gifW = Math.round(canvasWidth * gifRatio);
-      const gifH = Math.round(canvasHeight * gifRatio);
+      // Resize static image to target output dimensions
+      const resizedCanvas = document.createElement("canvas");
+      resizedCanvas.width = outW;
+      resizedCanvas.height = outH;
+      const resizedCtx = resizedCanvas.getContext("2d");
+      if (resizedCtx) {
+        resizedCtx.drawImage(imageCanvas, 0, 0, outW, outH);
+      }
+
+      // Generate static image with adaptive quality to stay under Nginx limit
+      let imageQuality = 0.85;
+      let finalImage = resizedCanvas.toDataURL("image/jpeg", imageQuality);
+
+      // GIF uses same output dimensions
+      const gifW = outW;
+      const gifH = outH;
 
       gifshot.createGIF(
         {
@@ -415,7 +429,7 @@ export default function EditLayoutContent() {
             while (totalSizeMB > MAX_UPLOAD_MB && imageQuality > 0.3) {
               imageQuality -= 0.1;
               console.log(`Total ${totalSizeMB.toFixed(2)}MB exceeds ${MAX_UPLOAD_MB}MB, re-compressing image at quality ${imageQuality.toFixed(1)}`);
-              finalImage = imageCanvas.toDataURL("image/jpeg", imageQuality);
+              finalImage = resizedCanvas.toDataURL("image/jpeg", imageQuality);
               imageSizeBytes = Math.ceil((finalImage.length - (finalImage.indexOf(',') + 1)) * 0.75);
               totalSizeMB = (gifSizeBytes + imageSizeBytes) / (1024 * 1024);
             }

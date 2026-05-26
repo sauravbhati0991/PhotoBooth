@@ -418,7 +418,6 @@ export default function PaymentsPage() {
                   </div>
                 </div>
 
-                {/* Average */}
                 <div className="mt-6 pt-5 border-t border-white/20">
                   <div className="flex justify-between items-center">
                     <span className="text-white/60 text-sm">Avg. Order Value</span>
