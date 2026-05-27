@@ -12,6 +12,8 @@ import {
   Plus,
   X,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   TrendingUp,
   Calendar,
   BarChart3,
@@ -55,6 +57,8 @@ export default function PaymentsPage() {
   const [cashSaving, setCashSaving] = useState(false);
 
   const [activeTab, setActiveTab] = useState<"analytics" | "orders">("analytics");
+  const [chartPeriod, setChartPeriod] = useState<"week" | "month" | "year">("week");
+  const [chartOffset, setChartOffset] = useState(0);
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -114,21 +118,6 @@ export default function PaymentsPage() {
 
     const avgOrderValue = completed.length > 0 ? Math.round(totalRevenue / completed.length) : 0;
 
-    const last7Days: { label: string; revenue: number; count: number }[] = [];
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
-      const dEnd = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1);
-      const dayOrders = completed.filter((o) => {
-        const c = new Date(o.createdAt);
-        return c >= d && c < dEnd;
-      });
-      last7Days.push({
-        label: d.toLocaleDateString("en-IN", { weekday: "short", day: "numeric" }),
-        revenue: dayOrders.reduce((s, o) => s + (o.amount || 0), 0),
-        count: dayOrders.length,
-      });
-    }
-    const maxDailyRevenue = Math.max(...last7Days.map((d) => d.revenue), 1);
 
     const layoutMap: Record<string, { count: number; revenue: number }> = {};
     completed.forEach((o) => {
@@ -157,11 +146,72 @@ export default function PaymentsPage() {
       pendingCount,
       pendingRevenue,
       avgOrderValue,
-      last7Days,
-      maxDailyRevenue,
+
       topLayouts,
     };
   }, [orders]);
+
+  // Chart data computed from period + offset
+  const chartData = useMemo(() => {
+    const completed = orders.filter((o) => o.paymentStatus === "completed");
+    const now = new Date();
+    const bars: { label: string; revenue: number; count: number }[] = [];
+    let periodLabel = "";
+
+    if (chartPeriod === "week") {
+      // 7 daily bars for the selected week
+      const baseEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const endDate = new Date(baseEnd.getTime() + chartOffset * 7 * 86400000);
+      const startDate = new Date(endDate.getTime() - 6 * 86400000);
+      periodLabel = `${startDate.toLocaleDateString("en-IN", { day: "numeric", month: "short" })} – ${endDate.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}`;
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(startDate.getTime() + i * 86400000);
+        const dEnd = new Date(d.getTime() + 86400000);
+        const dayOrders = completed.filter((o) => { const c = new Date(o.createdAt); return c >= d && c < dEnd; });
+        bars.push({
+          label: d.toLocaleDateString("en-IN", { weekday: "short", day: "numeric" }),
+          revenue: dayOrders.reduce((s, o) => s + (o.amount || 0), 0),
+          count: dayOrders.length,
+        });
+      }
+    } else if (chartPeriod === "month") {
+      // ~4 weekly bars for the selected month
+      const mStart = new Date(now.getFullYear(), now.getMonth() + chartOffset, 1);
+      const mEnd = new Date(now.getFullYear(), now.getMonth() + chartOffset + 1, 0, 23, 59, 59);
+      periodLabel = mStart.toLocaleDateString("en-IN", { month: "long", year: "numeric" });
+      let cursor = new Date(mStart);
+      let weekNum = 1;
+      while (cursor <= mEnd) {
+        const wEnd = new Date(Math.min(cursor.getTime() + 6 * 86400000, mEnd.getTime()));
+        const wStart = new Date(cursor);
+        const wOrders = completed.filter((o) => { const c = new Date(o.createdAt); return c >= wStart && c <= new Date(wEnd.getTime() + 86400000 - 1); });
+        bars.push({
+          label: `W${weekNum}`,
+          revenue: wOrders.reduce((s, o) => s + (o.amount || 0), 0),
+          count: wOrders.length,
+        });
+        cursor = new Date(wEnd.getTime() + 86400000);
+        weekNum++;
+      }
+    } else {
+      // 12 monthly bars for the selected year
+      const year = now.getFullYear() + chartOffset;
+      periodLabel = year.toString();
+      for (let m = 0; m < 12; m++) {
+        const mStart = new Date(year, m, 1);
+        const mEnd = new Date(year, m + 1, 0, 23, 59, 59);
+        const mOrders = completed.filter((o) => { const c = new Date(o.createdAt); return c >= mStart && c <= mEnd; });
+        bars.push({
+          label: mStart.toLocaleDateString("en-IN", { month: "short" }),
+          revenue: mOrders.reduce((s, o) => s + (o.amount || 0), 0),
+          count: mOrders.length,
+        });
+      }
+    }
+
+    const maxRevenue = Math.max(...bars.map((b) => b.revenue), 1);
+    return { bars, maxRevenue, periodLabel };
+  }, [orders, chartPeriod, chartOffset]);
 
 
   const handleMarkPaid = async (orderId: string) => {
@@ -331,36 +381,67 @@ export default function PaymentsPage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Daily Revenue Bar Chart */}
+              {/* Revenue Bar Chart */}
               <div className="lg:col-span-2 bg-white/20 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-white/10">
-                <h3 className="text-lg font-bold mb-1 flex items-center gap-2">
-                  <BarChart3 size={20} />
-                  Last 7 Days Revenue
-                </h3>
-                <p className="text-white/50 text-xs mb-6">Daily revenue breakdown</p>
+                <div className="flex items-center justify-between mb-1">
+                  <h3 className="text-lg font-bold flex items-center gap-2">
+                    <BarChart3 size={20} />
+                    Revenue Overview
+                  </h3>
+                  <div className="relative">
+                    <select
+                      value={chartPeriod}
+                      onChange={(e) => { setChartPeriod(e.target.value as "week" | "month" | "year"); setChartOffset(0); }}
+                      className="appearance-none bg-white/15 backdrop-blur-lg text-white text-xs font-semibold border border-white/30 rounded-xl px-3 py-1.5 pr-8 outline-none cursor-pointer hover:bg-white/25 transition"
+                    >
+                      <option value="week" className="bg-purple-700 text-white">Weekly</option>
+                      <option value="month" className="bg-purple-700 text-white">Monthly</option>
+                      <option value="year" className="bg-purple-700 text-white">Yearly</option>
+                    </select>
+                    <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-white/60" />
+                  </div>
+                </div>
 
-                <div className="flex items-end gap-3 h-48">
-                  {analytics.last7Days.map((day, i) => (
-                    <div key={i} className="flex-1 flex flex-col items-center gap-2">
-                      <span className="text-xs font-semibold text-white/80">
-                        {day.revenue > 0 ? `₹${day.revenue}` : "—"}
+                <div className="flex items-center justify-between mb-5">
+                  <button
+                    onClick={() => setChartOffset((p) => p - 1)}
+                    className="p-1.5 bg-white/10 hover:bg-white/20 rounded-lg transition cursor-pointer"
+                    title="Previous"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  <span className="text-sm font-semibold text-white/80">{chartData.periodLabel}</span>
+                  <button
+                    onClick={() => setChartOffset((p) => p + 1)}
+                    disabled={chartOffset >= 0}
+                    className={`p-1.5 rounded-lg transition ${chartOffset >= 0 ? "bg-white/5 text-white/20 cursor-not-allowed" : "bg-white/10 hover:bg-white/20 cursor-pointer"}`}
+                    title="Next"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+
+                <div className="flex items-end gap-2" style={{ height: "192px" }}>
+                  {chartData.bars.map((bar, i) => (
+                    <div key={i} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end min-w-0">
+                      <span className="text-[10px] font-semibold text-white/80 truncate w-full text-center">
+                        {bar.revenue > 0 ? `₹${bar.revenue}` : "—"}
                       </span>
                       <div
                         className="w-full rounded-t-lg transition-all duration-500 relative group"
                         style={{
-                          height: `${Math.max(4, (day.revenue / analytics.maxDailyRevenue) * 100)}%`,
-                          background: day.revenue > 0
+                          height: `${Math.max(8, Math.round((bar.revenue / chartData.maxRevenue) * 155))}px`,
+                          background: bar.revenue > 0
                             ? "linear-gradient(to top, rgba(255,255,255,0.3), rgba(255,255,255,0.6))"
                             : "rgba(255,255,255,0.1)",
                         }}
                       >
-                        {/* Tooltip */}
                         <div className="absolute -top-16 left-1/2 -translate-x-1/2 bg-purple-900/90 text-white text-xs px-3 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-xl z-10">
-                          <p className="font-bold">₹{day.revenue}</p>
-                          <p className="text-white/60">{day.count} order{day.count !== 1 ? "s" : ""}</p>
+                          <p className="font-bold">₹{bar.revenue}</p>
+                          <p className="text-white/60">{bar.count} order{bar.count !== 1 ? "s" : ""}</p>
                         </div>
                       </div>
-                      <span className="text-[10px] text-white/60">{day.label}</span>
+                      <span className="text-[9px] text-white/60 text-center leading-tight truncate w-full">{bar.label}</span>
                     </div>
                   ))}
                 </div>
@@ -438,7 +519,6 @@ export default function PaymentsPage() {
 
                 <div className="space-y-3">
                   {analytics.topLayouts.map(([name, data], i) => {
-                    const maxRev = analytics.topLayouts[0][1].revenue || 1;
                     return (
                       <div key={name} className="flex items-center gap-4">
                         <span className="w-6 h-6 bg-white/20 rounded-lg flex items-center justify-center text-xs font-bold shrink-0">
@@ -452,7 +532,7 @@ export default function PaymentsPage() {
                           <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
                             <div
                               className="h-full bg-white/40 rounded-full transition-all duration-700"
-                              style={{ width: `${(data.revenue / maxRev) * 100}%` }}
+                              style={{ width: `${analytics.totalRevenue > 0 ? (data.revenue / analytics.totalRevenue) * 100 : 0}%` }}
                             />
                           </div>
                           <p className="text-white/40 text-[10px] mt-0.5">{data.count} order{data.count !== 1 ? "s" : ""}</p>
@@ -475,11 +555,11 @@ export default function PaymentsPage() {
                 <select
                   value={filterType}
                   onChange={(e) => setFilterType(e.target.value)}
-                  className="appearance-none bg-white/20 backdrop-blur-lg text-white border border-white/30 rounded-xl px-4 py-2.5 pr-10 outline-none cursor-pointer"
+                  className="appearance-none bg-white/15 backdrop-blur-lg text-white font-semibold border border-white/30 rounded-xl px-4 py-2.5 pr-10 outline-none cursor-pointer hover:bg-white/25 transition"
                 >
-                  <option value="" className="text-gray-800">All Types</option>
-                  <option value="online" className="text-gray-800">Online</option>
-                  <option value="cash" className="text-gray-800">Cash</option>
+                  <option value="" className="bg-purple-700 text-white">All Types</option>
+                  <option value="online" className="bg-purple-700 text-white">Online</option>
+                  <option value="cash" className="bg-purple-700 text-white">Cash</option>
                 </select>
                 <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-white/60" />
               </div>
@@ -488,11 +568,11 @@ export default function PaymentsPage() {
                 <select
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value)}
-                  className="appearance-none bg-white/20 backdrop-blur-lg text-white border border-white/30 rounded-xl px-4 py-2.5 pr-10 outline-none cursor-pointer"
+                  className="appearance-none bg-white/15 backdrop-blur-lg text-white font-semibold border border-white/30 rounded-xl px-4 py-2.5 pr-10 outline-none cursor-pointer hover:bg-white/25 transition"
                 >
-                  <option value="" className="text-gray-800">All Status</option>
-                  <option value="completed" className="text-gray-800">Completed</option>
-                  <option value="pending" className="text-gray-800">Pending</option>
+                  <option value="" className="bg-purple-700 text-white">All Status</option>
+                  <option value="completed" className="bg-purple-700 text-white">Completed</option>
+                  <option value="pending" className="bg-purple-700 text-white">Pending</option>
                 </select>
                 <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-white/60" />
               </div>
