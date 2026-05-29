@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, Volume2, VolumeX } from "lucide-react";
+import { ChevronLeft, ChevronRight, Volume2, VolumeX, Square } from "lucide-react";
 import { useVoicePrompt } from "@/hooks/useVoicePrompt";
 
 type Template = {
@@ -15,6 +15,7 @@ type Template = {
   price: number;
   backgroundType: "color" | "image";
   backgroundValue: string;
+  elements?: any[];
 };
 
 const CELL = 72;
@@ -81,7 +82,7 @@ export default function GridCardsSection() {
 
   const openTemplate = (t: Template) => {
     router.push(
-      `/editLayout?title=${encodeURIComponent(t.name)}&price=${t.price}&count=${t.count}&rows=${t.rows}&cols=${t.cols}&bgType=${t.backgroundType}&bgValue=${encodeURIComponent(t.backgroundValue)}`,
+      `/editLayout?id=${t._id}&title=${encodeURIComponent(t.name)}&price=${t.price}&count=${t.count}&rows=${t.rows}&cols=${t.cols}&bgType=${t.backgroundType}&bgValue=${encodeURIComponent(t.backgroundValue)}`,
     );
   };
 
@@ -128,53 +129,81 @@ export default function GridCardsSection() {
             className="flex gap-10 items-center scrollbar-hide p-8 overflow-x-auto scroll-smooth w-full"
           >
             {templates.map((t) => {
-              const gridWidth = t.cols * CELL + (t.cols - 1) * GAP;
-              const gridHeight = t.rows * CELL + (t.rows - 1) * GAP;
+              const gridWidth = 160;
+              const gridHeight = 240;
+              const elements = t.elements || [];
 
               return (
                 <div
                   key={t._id}
                   onClick={() => openTemplate(t)}
-                  className="flex flex-col items-center cursor-pointer hover:scale-110 transition"
+                  className="flex flex-col items-center cursor-pointer hover:scale-105 hover:-translate-y-1 transition duration-300"
                   style={{ width: gridWidth + FRAME * 2 }}
                 >
                   <div
-                    className="rounded-2xl shadow-lg flex items-center justify-center"
+                    className="rounded-2xl shadow-xl flex items-center justify-center relative overflow-hidden bg-white/10 backdrop-blur-md border border-white/20 transition-all duration-300 hover:shadow-2xl"
                     style={{
-                      backgroundColor:
-                        t.backgroundType === "color"
-                          ? t.backgroundValue
-                          : undefined,
-                      backgroundImage:
-                        t.backgroundType === "image"
-                          ? `url(${t.backgroundValue})`
-                          : undefined,
-                      backgroundSize: "cover",
-                      backgroundPosition: "center",
                       padding: FRAME,
                       width: gridWidth + FRAME * 2,
                       height: gridHeight + FRAME * 2,
                     }}
                   >
                     <div
-                      className="grid"
+                      className="relative overflow-hidden rounded-lg w-full h-full"
                       style={{
-                        gridTemplateColumns: `repeat(${t.cols}, ${CELL}px)`,
-                        gridTemplateRows: `repeat(${t.rows}, ${CELL}px)`,
-                        gap: GAP,
+                        backgroundColor: t.backgroundType === "color" ? t.backgroundValue : "#ffffff",
+                        width: gridWidth,
+                        height: gridHeight,
                       }}
                     >
-                      {Array.from({ length: t.rows * t.cols }).map((_, i) => (
-                        <div key={i} className="bg-white rounded-lg" />
-                      ))}
+                      {elements.map((el: any) => {
+                        const scale = gridWidth / 1200;
+                        return (
+                          <div
+                            key={el.id}
+                            className="absolute overflow-hidden"
+                            style={{
+                              left: el.x * scale,
+                              top: el.y * scale,
+                              width: el.width * scale,
+                              height: el.height * scale,
+                              zIndex: el.type === "image" ? 10 : el.type === "text" ? 20 : 30
+                            }}
+                          >
+                            {el.type === "image" && el.src && (
+                              <img
+                                src={el.src}
+                                alt=""
+                                className="w-full h-full object-cover"
+                              />
+                            )}
+                            {el.type === "placeholder" && (
+                              <div className="w-full h-full bg-purple-50/85 border border-dashed border-purple-300 rounded-sm flex flex-col items-center justify-center text-purple-600 font-bold text-center" style={{ padding: 2 * scale }}>
+                                <Square size={Math.max(8, 16 * scale)} className="text-purple-400" style={{ marginBottom: 1 * scale }} />
+                                <span className="tracking-tight uppercase" style={{ fontSize: Math.max(6, 9 * scale), lineHeight: 1 }}>Photo</span>
+                              </div>
+                            )}
+                            {el.type === "text" && (
+                              <div
+                                className="w-full h-full flex items-center justify-center text-slate-900 font-bold text-center leading-none"
+                                style={{ fontSize: 16 * scale }}
+                              >
+                                {el.text}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
 
-                  <p className="mt-3 text-white font-medium text-center">
+                  <p className="mt-3 text-white font-semibold text-center text-sm drop-shadow-sm truncate w-full px-2">
                     {t.name}
                   </p>
 
-                  <p className="text-white/80 text-sm">{t.price === 0 ? "Free" : `₹${t.price}`}</p>
+                  <p className="text-white/80 text-xs font-medium bg-white/20 px-2.5 py-0.5 rounded-full mt-1 border border-white/10">
+                    {t.price === 0 ? "Free" : `₹${t.price}`}
+                  </p>
                 </div>
               );
             })}

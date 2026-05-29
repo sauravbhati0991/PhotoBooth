@@ -17,12 +17,11 @@ const PaymentContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  const id = searchParams.get("id");
   const title = searchParams.get("title") || "Photo Layout";
   const price = Number(searchParams.get("price")) || 0;
   const img = searchParams.get("img");
   const gif = searchParams.get("gif");
-  const rows = searchParams.get("rows");
-  const cols = searchParams.get("cols");
   const orderId = searchParams.get("orderId");
 
   const [loading, setLoading] = useState(false);
@@ -34,7 +33,7 @@ const PaymentContent = () => {
   const handlePayment = async () => {
     if (amount === 0) {
       router.push(
-        `/success?gif=${encodeURIComponent(gif || "")}&img=${encodeURIComponent(img || "")}&rows=${rows}&cols=${cols}&orderId=${encodeURIComponent(orderId || "")}`,
+        `/success?gif=${encodeURIComponent(gif || "")}&img=${encodeURIComponent(img || "")}&orderId=${encodeURIComponent(orderId || "")}`,
       );
       return;
     }
@@ -83,7 +82,7 @@ const PaymentContent = () => {
             if (verifyData.verified) {
               // Step 4: Redirect to success page
               router.push(
-                `/success?gif=${encodeURIComponent(gif || "")}&img=${encodeURIComponent(img || "")}&rows=${rows}&cols=${cols}&orderId=${encodeURIComponent(orderId || "")}`,
+                `/success?gif=${encodeURIComponent(gif || "")}&img=${encodeURIComponent(img || "")}&orderId=${encodeURIComponent(orderId || "")}`,
               );
             } else {
               setError("Payment verification failed. Please contact support.");

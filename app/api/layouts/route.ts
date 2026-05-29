@@ -8,6 +8,7 @@ type Layout = {
   price?: number;
   backgroundType?: "color" | "image";
   backgroundValue?: string;
+  elements?: any[];
 };
 
 export async function GET(req: Request) {
@@ -66,6 +67,7 @@ export async function POST(req: Request) {
       price: body.price,
       backgroundType: body.backgroundType,
       backgroundValue: body.backgroundValue,
+      elements: body.elements || [],
       createdAt: new Date(),
     };
 

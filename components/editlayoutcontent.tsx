@@ -5,8 +5,9 @@ import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import Webcam from "react-webcam";
 import gifshot from "gifshot";
 import Link from "next/link";
-import { Volume2, VolumeX } from "lucide-react";
+import { Volume2, VolumeX, Square } from "lucide-react";
 import { useVoicePrompt } from "@/hooks/useVoicePrompt";
+import CustomModal from "./customModal";
 
 type GifResult = { error: boolean; image: string };
 
@@ -14,50 +15,47 @@ export default function EditLayoutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  const id = searchParams.get("id");
   const title = searchParams.get("title") ?? "";
-  const count = Number(searchParams.get("count"));
-  const price = Number(searchParams.get("price"));
-  const rows = Number(searchParams.get("rows"));
-  const cols = Number(searchParams.get("cols"));
-  const bgType = searchParams.get("bgType");
-  const bgValue = searchParams.get("bgValue") ?? "#60a5fa";
+  const price = Number(searchParams.get("price")) || 0;
 
-  //a
+  const [layout, setLayout] = useState<any>(null);
+
+  // Fetch custom layout configuration
+  useEffect(() => {
+    if (id) {
+      fetch(`/api/layouts/${id}`)
+        .then((res) => res.json())
+        .then((data) => {
+          setLayout(data);
+          if (data.elements && data.elements.length > 0) {
+            const placeholders = data.elements.filter((el: any) => el.type === "placeholder");
+            const newCount = placeholders.length;
+            setFramesList(Array.from({ length: newCount }, () => []));
+            setStaticImages(Array.from({ length: newCount }, () => ""));
+            setImages(Array.from({ length: newCount }, () => ""));
+          }
+        })
+        .catch((err) => console.error("Error fetching layout:", err));
+    }
+  }, [id]);
 
   const webcamRef = useRef<Webcam>(null);
 
-  const isVerticalLayout = rows > cols;
-
-  const GAP = isVerticalLayout ? 6 : 8;
-  const PREVIEW_PADDING = isVerticalLayout ? 16 : 24;
+  const activeCount = layout && layout.elements
+    ? layout.elements.filter((el: any) => el.type === "placeholder").length
+    : 0;
 
   const maxHeight =
     typeof window !== "undefined" ? window.innerHeight * 0.6 : 500;
 
-  const CELL_SIZE = Math.min(
-    100,
-    Math.floor((maxHeight - PREVIEW_PADDING * 2 - GAP * (rows - 1)) / rows),
-  );
+  // Set aspect ratio of 4x6 preview
+  const previewHeight = Math.min(maxHeight, 480);
+  const previewWidth = (previewHeight * 4) / 6;
 
-  const previewWidth =
-    cols * CELL_SIZE + (cols - 1) * GAP + PREVIEW_PADDING * 2;
-
-  const previewHeight =
-    rows * CELL_SIZE + (rows - 1) * GAP + PREVIEW_PADDING * 2;
-
-  const isWidePreview = previewWidth > 420;
-
-  const [framesList, setFramesList] = useState<string[][]>(
-    Array.from({ length: count }, () => []),
-  );
-
-  const [staticImages, setStaticImages] = useState<string[]>(
-    Array.from({ length: count }, () => ""),
-  );
-
-  const [images, setImages] = useState<string[]>(
-    Array.from({ length: count }, () => ""),
-  );
+  const [framesList, setFramesList] = useState<string[][]>([]);
+  const [staticImages, setStaticImages] = useState<string[]>([]);
+  const [images, setImages] = useState<string[]>([]);
 
   const [filter, setFilter] = useState("none");
   const [capturing, setCapturing] = useState(false);
@@ -67,6 +65,33 @@ export default function EditLayoutContent() {
   const [countdown, setCountdown] = useState<number | null>(null);
   const [isAutoCapturing, setIsAutoCapturing] = useState(false);
   const [camError, setCamError] = useState<string | null>(null);
+
+  // Custom Modal state
+  const [modalState, setModalState] = useState<{
+    isOpen: boolean;
+    type: "alert" | "confirm";
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    type: "alert",
+    title: "",
+    message: "",
+    onConfirm: () => {},
+  });
+
+  const showAlert = (title: string, message: string) => {
+    setModalState({
+      isOpen: true,
+      type: "alert",
+      title,
+      message,
+      onConfirm: () => setModalState(prev => ({ ...prev, isOpen: false })),
+    });
+  };
+
+  const closeDialog = () => setModalState(prev => ({ ...prev, isOpen: false }));
 
   const { speak, isMuted, toggleMute } = useVoicePrompt();
 
@@ -84,7 +109,24 @@ export default function EditLayoutContent() {
 
   const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
-  const allFilled = useMemo(() => staticImages.every((img) => img !== ""), [staticImages]);
+  const allFilled = useMemo(() => staticImages.length > 0 && staticImages.every((img) => img !== ""), [staticImages]);
+
+  // Compute selected placeholder dimensions for dynamic camera sizing
+  const selectedPlaceholder = useMemo(() => {
+    if (selectedCell === null || !layout || !layout.elements) return null;
+    const placeholders = layout.elements.filter((el: any) => el.type === "placeholder");
+    return placeholders[selectedCell] || null;
+  }, [selectedCell, layout]);
+
+  const cameraAspectRatio = useMemo(() => {
+    if (!selectedPlaceholder) return 1; // default square
+    return selectedPlaceholder.width / selectedPlaceholder.height;
+  }, [selectedPlaceholder]);
+
+  // Max camera width constrained to 550px, height derived from aspect ratio
+  const cameraMaxWidth = 550;
+  const cameraWidth = cameraMaxWidth;
+  const cameraHeight = Math.round(cameraWidth / cameraAspectRatio);
 
   // "Layout is ready" voice and reminder
   useEffect(() => {
@@ -205,10 +247,10 @@ export default function EditLayoutContent() {
 
     setIsAutoCapturing(true);
 
-    for (let i = 0; i < count; i++) {
+    for (let i = 0; i < activeCount; i++) {
       setSelectedCell(i);
 
-      if (i === count - 1) {
+      if (i === activeCount - 1) {
         speak("Last one!");
       }
 
@@ -221,7 +263,7 @@ export default function EditLayoutContent() {
 
       setCountdown(null); // Clear countdown for snapshot
 
-      if (i === count - 1) {
+      if (i === activeCount - 1) {
         speak("Great!");
       } else if (i % 2 === 0) {
         speak("Cheese!");
@@ -237,7 +279,7 @@ export default function EditLayoutContent() {
 
     setIsAutoCapturing(false);
     setSelectedCell(null);
-  }, [count, handleCapture, isAutoCapturing, speak]);
+  }, [activeCount, handleCapture, isAutoCapturing, speak]);
 
   function drawRoundedImage(
     ctx: CanvasRenderingContext2D,
@@ -276,24 +318,25 @@ export default function EditLayoutContent() {
     setSaveProgress(0);
 
     try {
-      const FRAME_COUNT = count;
-      const CELL = 1080;
-      const GAP = 60;
-      const PADDING = 120;
+      const FRAME_COUNT = activeCount;
+      const canvasWidth = 1200;
+      const canvasHeight = 1800;
 
-      const canvasWidth = cols * CELL + GAP * (cols - 1) + PADDING * 2;
-      const canvasHeight = rows * CELL + GAP * (rows - 1) + PADDING * 2;
-
-      // OPTIMIZATION: Pre-load background image
-      let bgImageElement: HTMLImageElement | null = null;
-      if (bgType === "image") {
-        bgImageElement = new Image();
-        bgImageElement.crossOrigin = "anonymous";
-        bgImageElement.src = bgValue;
-        await new Promise((r) => (bgImageElement!.onload = r));
+      // Pre-load all custom layers
+      const loadedLayers: Record<string, HTMLImageElement> = {};
+      if (layout && layout.elements) {
+        for (const el of layout.elements) {
+          if (el.type === "image" && el.src) {
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            img.src = el.src;
+            await new Promise((r) => (img.onload = r));
+            loadedLayers[el.id] = img;
+          }
+        }
       }
 
-      // OPTIMIZATION: Pre-load all cell images
+      // Pre-load all captured static photo slot images
       const loadedStaticImages: (HTMLImageElement | null)[] = [];
       for (let f = 0; f < FRAME_COUNT; f++) {
         if (staticImages[f]) {
@@ -306,6 +349,43 @@ export default function EditLayoutContent() {
         }
       }
 
+      // Draw helper for elements
+      const drawFrame = (ctx: CanvasRenderingContext2D, photoIndex: number | null) => {
+        if (!layout || !layout.elements) return;
+
+        // Fill background color
+        ctx.fillStyle = layout.backgroundType === "color" ? layout.backgroundValue : "#ffffff";
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+        // Draw custom template layers: images first, text, then placeholders last (always on top)
+        const sortedElements = [...layout.elements].sort((a: any, b: any) => {
+          const order: Record<string, number> = { image: 1, text: 2, placeholder: 3 };
+          return (order[a.type] || 0) - (order[b.type] || 0);
+        });
+
+        for (const el of sortedElements) {
+          if (el.type === "image" && loadedLayers[el.id]) {
+            ctx.drawImage(loadedLayers[el.id], el.x, el.y, el.width, el.height);
+          } else if (el.type === "text") {
+            ctx.save();
+            ctx.fillStyle = "#000000";
+            ctx.font = "bold 48px sans-serif";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(el.text || "", el.x + el.width / 2, el.y + el.height / 2);
+            ctx.restore();
+          } else if (el.type === "placeholder") {
+            const placeholders = layout.elements.filter((item: any) => item.type === "placeholder");
+            const placeholderIndex = placeholders.findIndex((item: any) => item.id === el.id);
+            const targetIndex = photoIndex === null ? placeholderIndex : photoIndex;
+            const img = loadedStaticImages[targetIndex];
+            if (img) {
+              ctx.drawImage(img, el.x, el.y, el.width, el.height);
+            }
+          }
+        }
+      };
+
       const layoutFrames: string[] = [];
 
       for (let f = 0; f < FRAME_COUNT; f++) {
@@ -316,27 +396,8 @@ export default function EditLayoutContent() {
         const ctx = canvas.getContext("2d");
         if (!ctx) continue;
 
-        if (bgType === "image" && bgImageElement) {
-          ctx.drawImage(bgImageElement, 0, 0, canvasWidth, canvasHeight);
-        } else {
-          ctx.fillStyle = bgValue;
-          ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-        }
-
         ctx.filter = filter;
-
-        const img = loadedStaticImages[f];
-        if (!img) continue;
-
-        for (let i = 0; i < count; i++) {
-          const row = Math.floor(i / cols);
-          const col = i % cols;
-
-          const x = PADDING + col * (CELL + GAP);
-          const y = PADDING + row * (CELL + GAP);
-
-          drawRoundedImage(ctx, img, x, y, CELL, CELL, 20);
-        }
+        drawFrame(ctx, f);
 
         layoutFrames.push(canvas.toDataURL("image/jpeg", 0.85));
       }
@@ -348,27 +409,8 @@ export default function EditLayoutContent() {
       const imageCtx = imageCanvas.getContext("2d");
       if (!imageCtx) return;
 
-      if (bgType === "image" && bgImageElement) {
-        imageCtx.drawImage(bgImageElement, 0, 0, canvasWidth, canvasHeight);
-      } else {
-        imageCtx.fillStyle = bgValue;
-        imageCtx.fillRect(0, 0, canvasWidth, canvasHeight);
-      }
-
       imageCtx.filter = filter;
-
-      for (let i = 0; i < loadedStaticImages.length; i++) {
-        const img = loadedStaticImages[i];
-        if (!img) continue;
-
-        const row = Math.floor(i / cols);
-        const col = i % cols;
-
-        const x = PADDING + col * (CELL + GAP);
-        const y = PADDING + row * (CELL + GAP);
-
-        drawRoundedImage(imageCtx, img, x, y, CELL, CELL, 20);
-      }
+      drawFrame(imageCtx, null);
 
       // Target output resolution: fit within 1300x2100px bounding box
       const TARGET_W = 1300;
@@ -401,7 +443,7 @@ export default function EditLayoutContent() {
           gifWidth: gifW,
           gifHeight: gifH,
           numWorkers: 4,
-          quality: 3, // Lower number = better quality in gifshot (was 10)
+          quality: 3, // Lower number = better quality in gifshot
           progressCallback: (captureProgress: number) => {
             setSaveProgress(Math.floor(captureProgress * 70)); // 0-70% for gif creation
           }
@@ -423,8 +465,7 @@ export default function EditLayoutContent() {
 
             console.log(`GIF size: ${(gifSizeBytes / (1024 * 1024)).toFixed(2)}MB, Image size: ${(imageSizeBytes / (1024 * 1024)).toFixed(2)}MB, Total: ${totalSizeMB.toFixed(2)}MB`);
 
-            // If total exceeds 20MB (safe margin under 25MB Nginx limit),
-            // progressively reduce image JPEG quality
+            // If total exceeds 20MB, progressively reduce image JPEG quality
             const MAX_UPLOAD_MB = 20;
             while (totalSizeMB > MAX_UPLOAD_MB && imageQuality > 0.3) {
               imageQuality -= 0.1;
@@ -435,7 +476,7 @@ export default function EditLayoutContent() {
             }
 
             if (totalSizeMB > MAX_UPLOAD_MB) {
-              alert(`Upload size (${totalSizeMB.toFixed(1)}MB) is too large. Please try a smaller layout.`);
+              showAlert("Upload Too Large", `Upload size (${totalSizeMB.toFixed(1)}MB) is too large. Please try a smaller layout.`);
               setSaving(false);
               setSaveProgress(0);
               return;
@@ -452,8 +493,8 @@ export default function EditLayoutContent() {
                 gif: obj.image,
                 image: finalImage,
                 layoutTitle: title,
-                rows,
-                cols,
+                rows: 1,
+                cols: 1,
                 amount: price,
                 copies: 1,
               }),
@@ -462,7 +503,7 @@ export default function EditLayoutContent() {
             if (!res.ok) {
               const errText = await res.text();
               console.error(`Upload failed with status ${res.status}:`, errText);
-              alert(`Upload failed (${res.status}). The image may be too large. Please try again.`);
+              showAlert("Upload Failed", `Upload failed (${res.status}). The image may be too large. Please try again.`);
               setSaving(false);
               setSaveProgress(0);
               return;
@@ -473,7 +514,7 @@ export default function EditLayoutContent() {
             setSaveProgress(100); // Upload done
 
             router.push(
-              `/payment?title=${encodeURIComponent(title)}&price=${price}&gif=${encodeURIComponent(data.gifUrl)}&img=${encodeURIComponent(data.imageUrl)}&rows=${rows}&cols=${cols}&orderId=${encodeURIComponent(data.orderId)}`,
+              `/payment?title=${encodeURIComponent(title)}&price=${price}&gif=${encodeURIComponent(data.gifUrl)}&img=${encodeURIComponent(data.imageUrl)}&rows=1&cols=1&orderId=${encodeURIComponent(data.orderId)}`,
             );
           } catch (err) {
             console.error("Upload failed", err);
@@ -530,58 +571,121 @@ export default function EditLayoutContent() {
 
           <div className="w-full overflow-auto max-h-[55vh] custom-scrollbar rounded-xl">
             <div className="min-w-max flex justify-center items-center py-2 px-2">
-              <div
-                className="rounded-2xl shadow-2xl flex items-center justify-center transition-transform hover:scale-[1.02] duration-500"
-                style={{
-                  width: previewWidth,
-                  height: previewHeight,
-                  background:
-                    bgType === "image"
-                      ? `url(${bgValue}) center/cover`
-                      : bgValue,
-                  padding: PREVIEW_PADDING,
-                }}
-              >
+              {!layout ? (
                 <div
-                  className="grid"
+                  className="flex flex-col items-center justify-center bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl"
                   style={{
-                    gridTemplateColumns: `repeat(${cols}, ${CELL_SIZE}px)`,
-                    gridTemplateRows: `repeat(${rows}, ${CELL_SIZE}px)`,
-                    gap: GAP,
+                    width: previewWidth,
+                    height: previewHeight,
                   }}
                 >
-                  {staticImages.map((img, i) => (
-                    <div
-                      key={i}
-                      onClick={() => setSelectedCell(i)}
-                      className={`relative bg-white rounded-xl overflow-hidden cursor-pointer shadow-md transition-all duration-300
-                    ${selectedCell === i
-                          ? "ring-4 ring-white ring-offset-4 ring-offset-purple-500 scale-105 z-10"
-                          : "hover:ring-2 hover:ring-white/60 hover:scale-[1.03]"
-                        }`}
-                      style={{
-                        width: CELL_SIZE,
-                        height: CELL_SIZE,
-                      }}
-                    >
-                      {img ? (
-                        <img src={img} className="w-full h-full object-cover" style={{ filter }} />
-                      ) : (
-                        <div className="flex flex-col items-center justify-center h-full text-gray-400 group">
-                          <span className="text-2xl font-bold group-hover:scale-125 transition-transform text-purple-200">+</span>
-                          <span className="text-[10px] uppercase tracking-tighter opacity-0 group-hover:opacity-100 transition-opacity">Select</span>
-                        </div>
-                      )}
-
-                      {selectedCell === i && !img && (
-                        <div className="absolute inset-0 bg-purple-500/20 animate-pulse flex items-center justify-center">
-                          <div className="w-2 h-2 bg-white rounded-full"></div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                  <div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin mb-3"></div>
+                  <p className="text-sm font-semibold opacity-70">Loading Template...</p>
                 </div>
-              </div>
+              ) : (
+                <div
+                  className="rounded-2xl shadow-2xl relative transition-transform hover:scale-[1.02] duration-500 overflow-hidden"
+                  style={{
+                    width: previewWidth,
+                    height: previewHeight,
+                    backgroundColor: layout.backgroundType === "color" ? layout.backgroundValue : "#ffffff",
+                  }}
+                >
+                  {layout.elements?.map((el: any) => {
+                    const scale = previewWidth / 1200;
+
+                    if (el.type === "image") {
+                      return (
+                        <div
+                          key={el.id}
+                          className="absolute pointer-events-none"
+                          style={{
+                            left: el.x * scale,
+                            top: el.y * scale,
+                            width: el.width * scale,
+                            height: el.height * scale,
+                            zIndex: 10
+                          }}
+                        >
+                          {el.src && (
+                            <img
+                              src={el.src}
+                              alt=""
+                              className="w-full h-full object-cover"
+                            />
+                          )}
+                        </div>
+                      );
+                    }
+
+                    if (el.type === "text") {
+                      return (
+                        <div
+                          key={el.id}
+                          className="absolute flex items-center justify-center text-slate-900 font-bold text-center leading-none pointer-events-none"
+                          style={{
+                            left: el.x * scale,
+                            top: el.y * scale,
+                            width: el.width * scale,
+                            height: el.height * scale,
+                            fontSize: 16 * scale,
+                            zIndex: 20
+                          }}
+                        >
+                          {el.text}
+                        </div>
+                      );
+                    }
+
+                    if (el.type === "placeholder") {
+                      const placeholders = layout.elements.filter((item: any) => item.type === "placeholder");
+                      const placeholderIndex = placeholders.findIndex((item: any) => item.id === el.id);
+                      const img = staticImages[placeholderIndex];
+                      const isSelected = selectedCell === placeholderIndex;
+
+                      return (
+                        <div
+                          key={el.id}
+                          onClick={() => setSelectedCell(placeholderIndex)}
+                          className={`absolute overflow-hidden cursor-pointer shadow-md transition-all duration-300
+                            ${isSelected
+                              ? "ring-4 ring-white ring-offset-4 ring-offset-purple-500 scale-105"
+                              : "hover:ring-2 hover:ring-white/60 hover:scale-[1.03]"
+                            }`}
+                          style={{
+                            left: el.x * scale,
+                            top: el.y * scale,
+                            width: el.width * scale,
+                            height: el.height * scale,
+                            zIndex: isSelected ? 40 : 30
+                          }}
+                        >
+                          {img ? (
+                            <img
+                              src={img}
+                              className="w-full h-full object-cover"
+                              style={{ filter }}
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-purple-50/85 border border-dashed border-purple-300 flex flex-col items-center justify-center text-purple-600 font-bold text-center select-none" style={{ padding: 4 * scale }}>
+                              <Square size={Math.max(10, 20 * scale)} className="text-purple-400" style={{ marginBottom: 2 * scale }} />
+                              <span className="tracking-tight uppercase" style={{ fontSize: Math.max(6, 10 * scale), lineHeight: 1 }}>Photo</span>
+                            </div>
+                          )}
+
+                          {isSelected && !img && (
+                            <div className="absolute inset-0 bg-purple-500/20 animate-pulse flex items-center justify-center">
+                              <div className="w-2 h-2 bg-white rounded-full"></div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    }
+
+                    return null;
+                  })}
+                </div>
+              )}
             </div>
           </div>
 
@@ -617,8 +721,21 @@ export default function EditLayoutContent() {
         </div>
 
         {/* 2. Camera Screen */}
-        <div className="flex flex-col items-center gap-4 flex-1">
-          <div className="relative w-full max-w-[550px] aspect-square rounded-3xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.3)] ring-8 ring-white/10 group">
+        <div className="flex flex-col items-center gap-4 flex-1 w-full">
+          {selectedCell !== null && selectedPlaceholder && (
+            <div className="flex items-center gap-2 bg-white/15 backdrop-blur-md border border-white/20 rounded-full px-4 py-1.5 text-xs font-semibold text-white/90 transition-all duration-300 animate-in">
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+              Slot {selectedCell + 1} — {Math.round(selectedPlaceholder.width)}×{Math.round(selectedPlaceholder.height)}px
+            </div>
+          )}
+          <div
+            className="relative rounded-3xl overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.3)] ring-8 ring-white/10 group transition-all duration-500 ease-in-out mx-auto"
+            style={{
+              width: '100%',
+              maxWidth: cameraWidth,
+              aspectRatio: `${cameraAspectRatio}`,
+            }}
+          >
             <Webcam
               ref={webcamRef}
               screenshotFormat="image/jpeg"
@@ -676,7 +793,7 @@ export default function EditLayoutContent() {
             )}
           </div>
 
-          <div className="flex flex-col gap-3 w-full max-w-[550px]">
+          <div className="flex flex-col gap-3 w-full mx-auto" style={{ maxWidth: cameraWidth }}>
             <button
               onClick={() => handleCapture()}
               disabled={capturing || selectedCell === null || isAutoCapturing || saving}
@@ -736,6 +853,15 @@ export default function EditLayoutContent() {
         </div>
 
       </div>
+
+      <CustomModal
+        isOpen={modalState.isOpen}
+        type={modalState.type}
+        title={modalState.title}
+        message={modalState.message}
+        onConfirm={modalState.onConfirm}
+        onCancel={closeDialog}
+      />
     </div>
   );
 }

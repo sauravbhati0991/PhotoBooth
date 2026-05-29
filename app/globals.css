@@ -26,6 +26,10 @@ body {
   margin: 0;
 }
 
+button, select, input[type="checkbox"], label, input[type="radio"] {
+  cursor: pointer;
+}
+
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }

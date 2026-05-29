@@ -11,24 +11,6 @@ export default function SuccessContent() {
   const gif = searchParams.get("gif");
   const img = searchParams.get("img");
 
-  const rows = Number(searchParams.get("rows")) || 2;
-  const cols = Number(searchParams.get("cols")) || 2;
-
-  const CELL = 260;
-  const GAP = 20;
-  const PADDING = 40;
-
-  const layoutWidth = cols * CELL + GAP * (cols - 1) + PADDING * 2;
-  const layoutHeight = rows * CELL + GAP * (rows - 1) + PADDING * 2;
-
-  const CONTAINER_WIDTH = 300;
-  const CONTAINER_HEIGHT = 450;
-
-  const scale = Math.min(
-    CONTAINER_WIDTH / layoutWidth,
-    CONTAINER_HEIGHT / layoutHeight,
-  );
-
   const handleDownload = async (url: string, name: string) => {
     if (!url) return;
 

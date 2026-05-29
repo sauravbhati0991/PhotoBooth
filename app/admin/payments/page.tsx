@@ -20,6 +20,7 @@ import {
   PieChart,
   Trash2,
 } from "lucide-react";
+import CustomModal from "@/components/customModal";
 
 type Order = {
   _id: string;
@@ -59,6 +60,33 @@ export default function PaymentsPage() {
   const [activeTab, setActiveTab] = useState<"analytics" | "orders">("analytics");
   const [chartPeriod, setChartPeriod] = useState<"week" | "month" | "year">("week");
   const [chartOffset, setChartOffset] = useState(0);
+
+  // Custom Modal state
+  const [modalState, setModalState] = useState<{
+    isOpen: boolean;
+    type: "alert" | "confirm";
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    type: "alert",
+    title: "",
+    message: "",
+    onConfirm: () => {},
+  });
+
+  const showAlert = (title: string, message: string) => {
+    setModalState({
+      isOpen: true,
+      type: "alert",
+      title,
+      message,
+      onConfirm: () => setModalState(prev => ({ ...prev, isOpen: false })),
+    });
+  };
+
+  const closeDialog = () => setModalState(prev => ({ ...prev, isOpen: false }));
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -273,11 +301,11 @@ export default function PaymentsPage() {
         fetchOrders();
       } else {
         const data = await res.json();
-        alert(data.error || "Failed to delete order");
+        showAlert("Error", data.error || "Failed to delete order");
       }
     } catch (error) {
       console.error("Failed to delete order:", error);
-      alert("Failed to delete order");
+      showAlert("Error", "Failed to delete order");
     } finally {
       setIsDeleting(false);
     }
@@ -966,6 +994,15 @@ export default function PaymentsPage() {
           </div>
         </div>
       )}
+
+      <CustomModal
+        isOpen={modalState.isOpen}
+        type={modalState.type}
+        title={modalState.title}
+        message={modalState.message}
+        onConfirm={modalState.onConfirm}
+        onCancel={closeDialog}
+      />
     </div>
   );
 }

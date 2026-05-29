@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import QRCode from "qrcode";
 import Link from "next/link";
+import CustomModal from "./customModal";
 
 export default function SuccessContent() {
   const searchParams = useSearchParams();
@@ -13,10 +14,33 @@ export default function SuccessContent() {
   const img = searchParams.get("img");
   const orderId = searchParams.get("orderId");
 
-  const rows = Number(searchParams.get("rows")) || 2;
-  const cols = Number(searchParams.get("cols")) || 2;
-
   const [qr, setQr] = useState("");
+  
+  const [modalState, setModalState] = useState<{
+    isOpen: boolean;
+    type: "alert" | "confirm";
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    type: "alert",
+    title: "",
+    message: "",
+    onConfirm: () => {},
+  });
+
+  const showAlert = (title: string, message: string) => {
+    setModalState({
+      isOpen: true,
+      type: "alert",
+      title,
+      message,
+      onConfirm: () => setModalState(prev => ({ ...prev, isOpen: false })),
+    });
+  };
+
+  const closeDialog = () => setModalState(prev => ({ ...prev, isOpen: false }));
 
   const downloadUrl =
     typeof window !== "undefined" &&
@@ -24,27 +48,12 @@ export default function SuccessContent() {
     img &&
     `${window.location.origin}/download?gif=${encodeURIComponent(
       gif,
-    )}&img=${encodeURIComponent(img)}&rows=${rows}&cols=${cols}`;
+    )}&img=${encodeURIComponent(img)}`;
 
   useEffect(() => {
     if (!downloadUrl) return;
     QRCode.toDataURL(downloadUrl).then(setQr);
   }, [downloadUrl]);
-
-  const CELL = 260;
-  const GAP = 20;
-  const PADDING = 40;
-
-  const layoutWidth = cols * CELL + GAP * (cols - 1) + PADDING * 2;
-  const layoutHeight = rows * CELL + GAP * (rows - 1) + PADDING * 2;
-
-  const CONTAINER_WIDTH = 300;
-  const CONTAINER_HEIGHT = 450;
-
-  const scale = Math.min(
-    CONTAINER_WIDTH / layoutWidth,
-    CONTAINER_HEIGHT / layoutHeight,
-  );
 
   const handleDownload = async (url: string, name: string) => {
     if (!url) return;
@@ -106,7 +115,7 @@ export default function SuccessContent() {
       });
     } else {
       await navigator.clipboard.writeText(gif);
-      alert("GIF link copied!");
+      showAlert("Copied", "GIF link copied!");
     }
   };
 
@@ -218,6 +227,15 @@ export default function SuccessContent() {
           Back to Home
         </button>
       </div>
+
+      <CustomModal
+        isOpen={modalState.isOpen}
+        type={modalState.type}
+        title={modalState.title}
+        message={modalState.message}
+        onConfirm={modalState.onConfirm}
+        onCancel={closeDialog}
+      />
     </div>
   );
 }
