@@ -580,7 +580,7 @@ export default function EditLayoutContent() {
             <p className="text-white/60 text-xs">{allFilled ? "Ready to save!" : "Tap a slot"}</p>
           </div>
 
-          <div className="w-full overflow-auto max-h-[55vh] custom-scrollbar rounded-xl">
+          <div className="w-full overflow-auto max-h-[75vh] custom-scrollbar rounded-xl">
             <div className="min-w-max flex justify-center items-center py-2 px-2">
               {!layout ? (
                 <div
