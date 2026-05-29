@@ -62,7 +62,7 @@ export default function SuccessContent() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center bg-gradient-to-r from-purple-500 via-pink-400 to-purple-600 text-white px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-r from-purple-500 via-pink-400 to-purple-600 text-white flex flex-col items-center px-4 py-8">
       <nav className="w-full max-w-6xl flex justify-between items-center mb-6">
         <Link href="/" className="text-xl sm:text-2xl font-bold cursor-pointer">
           PhotoBooth
@@ -81,16 +81,14 @@ export default function SuccessContent() {
           <div className="flex flex-col items-center gap-4">
             <p className="text-white/80">GIF Preview</p>
 
-            <div className="bg-white/20 backdrop-blur-lg rounded-2xl p-4 flex justify-center items-center">
-              <div
-                style={{ width: 300, height: 450 }}
-                className="flex justify-center items-center overflow-hidden rounded-2xl"
-              >
-                <img
-                  src={gif}
-                  className="max-w-full max-h-full object-contain"
-                />
-              </div>
+            <div
+              className="rounded-2xl shadow-2xl overflow-hidden"
+              style={{ width: 320, height: 480, backgroundColor: "#ffffff" }}
+            >
+              <img
+                src={gif}
+                className="w-full h-full object-cover"
+              />
             </div>
 
             <button
@@ -106,16 +104,14 @@ export default function SuccessContent() {
           <div className="flex flex-col items-center gap-4">
             <p className="text-white/80">Image Preview</p>
 
-            <div className="bg-white/20 backdrop-blur-lg rounded-2xl p-4 flex justify-center items-center">
-              <div
-                style={{ width: 300, height: 450 }}
-                className="flex justify-center items-center overflow-hidden"
-              >
-                <img
-                  src={img}
-                  className="w-full h-full object-contain rounded-xl"
-                />
-              </div>
+            <div
+              className="rounded-2xl shadow-2xl overflow-hidden"
+              style={{ width: 320, height: 480, backgroundColor: "#ffffff" }}
+            >
+              <img
+                src={img}
+                className="w-full h-full object-cover"
+              />
             </div>
 
             <div className="flex gap-3 flex-wrap justify-center">

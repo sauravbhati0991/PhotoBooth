@@ -120,7 +120,7 @@ export default function SuccessContent() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center bg-gradient-to-r from-purple-500 via-pink-400 to-purple-600 text-white px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-r from-purple-500 via-pink-400 to-purple-600 text-white flex flex-col items-center px-4 py-8">
       <nav className="w-full max-w-6xl flex justify-between items-center mb-6">
         <Link href="/" className="text-xl sm:text-2xl font-bold cursor-pointer">
           PhotoBooth

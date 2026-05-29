@@ -380,7 +380,18 @@ export default function EditLayoutContent() {
             const targetIndex = photoIndex === null ? placeholderIndex : photoIndex;
             const img = loadedStaticImages[targetIndex];
             if (img) {
-              ctx.drawImage(img, el.x, el.y, el.width, el.height);
+              // Match CSS object-cover: crop source to placeholder aspect ratio
+              const imgAspect = img.width / img.height;
+              const elAspect = el.width / el.height;
+              let sx = 0, sy = 0, sw = img.width, sh = img.height;
+              if (imgAspect > elAspect) {
+                sw = img.height * elAspect;
+                sx = (img.width - sw) / 2;
+              } else {
+                sh = img.width / elAspect;
+                sy = (img.height - sh) / 2;
+              }
+              ctx.drawImage(img, sx, sy, sw, sh, el.x, el.y, el.width, el.height);
             }
           }
         }
